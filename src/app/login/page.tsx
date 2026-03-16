@@ -38,11 +38,15 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-dot-pattern bg-background flex items-center justify-center p-4">
-      <div className="w-full max-w-sm">
+    <div className="relative overflow-hidden min-h-screen bg-dot-pattern bg-background flex items-center justify-center p-4">
+      <div
+        className="pointer-events-none absolute top-0 left-1/2 -translate-x-1/2 w-150 h-64"
+        style={{ background: "radial-gradient(ellipse at 50% 0%, var(--brand-glow) 0%, transparent 70%)" }}
+      />
+      <div className="relative w-full max-w-sm">
         {/* Logo */}
         <div className="flex flex-col items-center mb-8 gap-3">
-          <div className="h-10 w-10 rounded-xl bg-primary flex items-center justify-center">
+          <div className="h-10 w-10 rounded-xl bg-brand-gradient flex items-center justify-center">
             <span className="text-primary-foreground font-semibold text-lg">J</span>
           </div>
           <h1 className="text-xl font-semibold tracking-tight text-foreground">Jarvis</h1>
@@ -78,7 +82,7 @@ export default function LoginPage() {
                   <p className="text-sm text-destructive">{error}</p>
                 )}
 
-                <Button type="submit" className="w-full" disabled={loading}>
+                <Button type="submit" className="w-full bg-brand-gradient border-0" disabled={loading}>
                   {loading ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
@@ -119,3 +123,4 @@ export default function LoginPage() {
     </div>
   );
 }
+
