@@ -1,18 +1,18 @@
 import { FileCheck2, Mail, Clock, CheckCircle2, AlertCircle, ArrowUpRight } from "lucide-react";
 
 const ORDERS = [
-  { id: "ORD-2841", customer: "Pelseal Ltd",       items: 4, value: "£3,200", status: "approved",  received: "9:14am" },
-  { id: "ORD-2840", customer: "Brennan Seals",     items: 2, value: "£780",   status: "review",    received: "8:52am" },
-  { id: "ORD-2839", customer: "Anglo Nordic",      items: 7, value: "£6,100", status: "approved",  received: "8:31am" },
-  { id: "ORD-2838", customer: "Euro Seals GmbH",   items: 1, value: "£220",   status: "exception", received: "7:55am" },
-  { id: "ORD-2837", customer: "Precision Polymer", items: 3, value: "£1,890", status: "approved",  received: "7:40am" },
+  { id: "ORD-2841", customer: "Pelseal Ltd",       items: 4, value: "$3,200", status: "approved",  received: "9:14am" },
+  { id: "ORD-2840", customer: "Brennan Seals",     items: 2, value: "$780",   status: "review",    received: "8:52am" },
+  { id: "ORD-2839", customer: "Anglo Nordic",      items: 7, value: "$6,100", status: "approved",  received: "8:31am" },
+  { id: "ORD-2838", customer: "Euro Seals GmbH",   items: 1, value: "$220",   status: "exception", received: "7:55am" },
+  { id: "ORD-2837", customer: "Precision Polymer", items: 3, value: "$1,890", status: "approved",  received: "7:40am" },
 ];
 
 const METRICS = [
   { label: "Processed Today", value: "18",  sub: "avg 4 min each" },
   { label: "Awaiting Review", value: "3",   sub: "manual check needed" },
   { label: "Exceptions",      value: "1",   sub: "price mismatch" },
-  { label: "Invoiced",        value: "£38k", sub: "today's total" },
+  { label: "Invoiced",        value: "$38k", sub: "today's total" },
 ];
 
 const STATUS_STYLES: Record<string, { cls: string; label: string; icon: React.ReactNode }> = {

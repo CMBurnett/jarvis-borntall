@@ -35,7 +35,7 @@ export default async function AppLayout({
   }
 
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="flex min-h-screen bg-background bg-dot-pattern">
       <NavSidebar isAdmin={isAdmin} user={user} />
 
       <div className="flex flex-1 flex-col pl-22">

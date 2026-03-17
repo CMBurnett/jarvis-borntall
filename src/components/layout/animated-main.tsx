@@ -157,7 +157,7 @@ export function AnimatedMain({ children }: { children: React.ReactNode }) {
   const custom = { dir: dirRef.current, delay: enterDelayRef.current };
 
   return (
-    <main className="flex-1 bg-dot-pattern relative overflow-hidden">
+    <main className="flex-1 relative overflow-hidden">
       {/* Brand glow */}
       <div
         className="pointer-events-none absolute top-0 left-1/2 -translate-x-1/2 w-175 h-48"

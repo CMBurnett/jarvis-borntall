@@ -6,19 +6,8 @@ import {
   ShieldCheck,
   BarChart3,
   FileCheck2,
-  TrendingUp,
-  Users,
-  Clock,
-  Cpu,
   ArrowUpRight,
 } from "lucide-react";
-
-const METRICS = [
-  { label: "Active Apps", value: "3", sub: "of 3 deployed", Icon: Cpu },
-  { label: "Platform Uptime", value: "99.9%", sub: "last 30 days", Icon: TrendingUp },
-  { label: "Active Users", value: "12", sub: "+2 this week", Icon: Users },
-  { label: "Avg. Response", value: "1.2s", sub: "model latency", Icon: Clock },
-];
 
 const APPS = [
   {
@@ -79,7 +68,7 @@ export default async function HomePage() {
   const dateStr = formatDate(new Date());
 
   return (
-    <div className="flex flex-col gap-8 max-w-6xl mx-auto">
+    <div className="flex flex-col gap-8 max-w-6xl mx-auto h-[calc(100vh-3rem)]">
       {/* Greeting */}
       <div className="flex items-end justify-between pt-1">
         <div>
@@ -94,102 +83,62 @@ export default async function HomePage() {
         </div>
       </div>
 
-      {/* Chat */}
-      <ChatBlock />
-
-      {/* KPI strip */}
-      <div className="grid grid-cols-4 gap-4">
-        {METRICS.map(({ label, value, sub, Icon }) => (
-          <div
-            key={label}
-            className="rounded-xl border border-border bg-card shadow-sm p-5"
-          >
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0">
-                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                  {label}
-                </p>
-                <p className="text-2xl font-semibold text-foreground mt-1.5 tabular-nums">
-                  {value}
-                </p>
-                <p className="text-xs text-muted-foreground mt-1">{sub}</p>
-              </div>
-              <div className="h-9 w-9 rounded-lg bg-muted flex items-center justify-center shrink-0">
-                <Icon className="h-4 w-4 text-muted-foreground" />
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Apps */}
-      <div>
-        <div className="flex items-center justify-between mb-4">
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            Apps
-          </p>
-          <Link
-            href="/apps"
-            className="flex items-center gap-1 text-xs text-primary hover:underline"
-          >
-            View all
-            <ArrowUpRight className="h-3 w-3" />
-          </Link>
+      {/* Chat + Apps side by side */}
+      <div className="grid grid-cols-3 gap-6 flex-1 min-h-0">
+        {/* Chat */}
+        <div className="col-span-2 h-full">
+          <ChatBlock />
         </div>
 
-        <div className="grid grid-cols-3 gap-4">
-          {APPS.map((app) => (
-            <div
-              key={app.id}
-              className="rounded-xl border border-border bg-card shadow-sm overflow-hidden flex flex-col"
-            >
-              <div className="p-5 flex-1">
-                {/* Icon + name row */}
-                <div className="flex items-start gap-3 mb-4">
-                  <div className="relative shrink-0">
-                    <div
-                      className={`h-11 w-11 rounded-xl bg-linear-to-br ${app.gradient} flex items-center justify-center shadow-md`}
-                    >
-                      <app.Icon className="h-5 w-5 text-white" strokeWidth={1.75} />
+        {/* Apps */}
+        <div className="flex flex-col gap-4">
+            {APPS.map((app) => (
+              <div
+                key={app.id}
+                className="rounded-xl border border-border bg-card shadow-sm overflow-hidden flex flex-col flex-1"
+              >
+                <div className="p-5 flex-1">
+                  {/* Icon + name row */}
+                  <div className="flex items-start gap-3">
+                    <div className="relative shrink-0">
+                      <div
+                        className={`h-11 w-11 rounded-xl bg-linear-to-br ${app.gradient} flex items-center justify-center shadow-md`}
+                      >
+                        <app.Icon className="h-5 w-5 text-white" strokeWidth={1.75} />
+                      </div>
+                      <div
+                        className={`absolute -inset-0.75 rounded-[15px] border ${app.ringColor} pointer-events-none`}
+                      />
                     </div>
-                    <div
-                      className={`absolute -inset-0.75 rounded-[15px] border ${app.ringColor} pointer-events-none`}
-                    />
-                  </div>
-                  <div className="flex-1 min-w-0 pt-0.5">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <h3 className="text-sm font-semibold text-foreground leading-tight">
-                        {app.name}
-                      </h3>
-                      <StatusBadge status={app.status} />
+                    <div className="flex-1 min-w-0 pt-0.5">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h3 className="text-sm font-semibold text-foreground leading-tight">
+                          {app.name}
+                        </h3>
+                        <StatusBadge status={app.status} />
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1 leading-relaxed line-clamp-2">
+                        {app.description}
+                      </p>
                     </div>
-                    <p className="text-xs text-muted-foreground mt-1 leading-relaxed line-clamp-2">
-                      {app.description}
-                    </p>
                   </div>
                 </div>
 
-                {/* Stats line */}
-                <p className="text-xs text-muted-foreground tabular-nums">
-                  {app.stats}
-                </p>
+                {/* Footer */}
+                <div className="border-t border-border/60 px-5 py-3 bg-muted/30 flex items-center justify-between">
+                  <span className="text-xs text-muted-foreground">
+                    Used {app.lastUsed}
+                  </span>
+                  <Link
+                    href={`/apps/${app.id}`}
+                    className="flex items-center gap-1 text-xs font-medium text-primary hover:underline"
+                  >
+                    Open
+                    <ArrowUpRight className="h-3 w-3" />
+                  </Link>
+                </div>
               </div>
-
-              {/* Footer */}
-              <div className="border-t border-border/60 px-5 py-3 bg-muted/30 flex items-center justify-between">
-                <span className="text-xs text-muted-foreground">
-                  Used {app.lastUsed}
-                </span>
-                <Link
-                  href={`/apps/${app.id}`}
-                  className="flex items-center gap-1 text-xs font-medium text-primary hover:underline"
-                >
-                  Open
-                  <ArrowUpRight className="h-3 w-3" />
-                </Link>
-              </div>
-            </div>
-          ))}
+            ))}
         </div>
       </div>
     </div>

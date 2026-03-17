@@ -1,14 +1,14 @@
 import { BarChart3, TrendingUp, TrendingDown, Database, ArrowUp } from "lucide-react";
 
 const METRICS = [
-  { label: "Revenue MTD",    value: "£284k",  delta: "+12%",  up: true },
+  { label: "Revenue MTD",    value: "$284k",  delta: "+12%",  up: true },
   { label: "Orders Shipped", value: "1,042",  delta: "+8%",   up: true },
-  { label: "Avg Order Value", value: "£2,730", delta: "-3%",  up: false },
-  { label: "Outstanding",    value: "£47k",   delta: "+21%",  up: false },
+  { label: "Avg Order Value", value: "$2,730", delta: "-3%",  up: false },
+  { label: "Outstanding",    value: "$47k",   delta: "+21%",  up: false },
 ];
 
 const QUERIES = [
-  { q: "How many times did we sell to Pelseal Ltd last year?", a: "32 orders · £94,200 total · last order 14 Feb" },
+  { q: "How many times did we sell to Pelseal Ltd last year?", a: "32 orders · $94,200 total · last order 14 Feb" },
   { q: "Top 5 products by margin this month?", a: "PL-220, PL-440, HX-100, FX-900, GX-12 — avg 38% margin" },
   { q: "Which customers haven't ordered in 90+ days?", a: "11 customers identified — report ready to export" },
 ];
