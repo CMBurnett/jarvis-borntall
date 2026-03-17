@@ -1388,9 +1388,22 @@ export const emailOrderQueue = [
 
 // ─── Context Builder ─────────────────────────────────────────────────────────
 
+// ─── Helpers for markdown table formatting ──────────────────────────────────
+
+function $(v: number): string {
+  return `$${v.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+
+function mdTable(headers: string[], rows: string[][]): string {
+  const sep = headers.map(() => "---").join(" | ");
+  const head = headers.join(" | ");
+  const body = rows.map((r) => r.join(" | ")).join("\n");
+  return `${head}\n${sep}\n${body}`;
+}
+
 /**
  * Builds a formatted context string for injection into the LLM system prompt.
- * Can be filtered by domain to keep token usage manageable.
+ * Uses markdown tables for compact, scannable output that small LLMs handle well.
  */
 export function buildDemoContext(
   domains: (
@@ -1412,86 +1425,179 @@ export function buildDemoContext(
   const include = (d: string) => domains.includes("all") || domains.includes(d as never);
 
   const sections: string[] = [
-    "=== BUSINESS DATA CONTEXT (Sage 100 + Access DB) ===",
-    `Data as of: 2026-03-15`,
+    "=== BUSINESS DATA (Sage 100 + Access DB) — as of 2026-03-15 ===",
     "",
   ];
 
   if (include("customers")) {
-    sections.push("--- CUSTOMERS ---");
-    sections.push(JSON.stringify(customers, null, 2));
+    sections.push("## CUSTOMERS");
+    sections.push(mdTable(
+      ["ID", "Name", "Contact", "Email", "Phone", "Terms", "Credit Limit", "Current Balance", "YTD Revenue", "Segment", "Status", "Last Order", "Notes"],
+      customers.map((c) => [
+        c.id, c.name, c.contact, c.email, c.phone, c.terms,
+        $(c.creditLimit), $(c.currentBalance), $(c.ytdRevenue),
+        c.segment, c.status, c.lastOrder, c.notes,
+      ]),
+    ));
     sections.push("");
   }
 
   if (include("products")) {
-    sections.push("--- PRODUCTS & INVENTORY ---");
-    sections.push(JSON.stringify(products, null, 2));
+    sections.push("## PRODUCTS & INVENTORY");
+    sections.push(mdTable(
+      ["SKU", "Name", "Category", "Unit Cost", "Unit Price", "Margin %", "Qty On Hand", "Reorder Point", "Warehouse", "Status"],
+      products.map((p) => [
+        p.sku, p.name, p.category, $(p.unitCost), $(p.unitPrice),
+        `${p.marginPct}%`, String(p.qtyOnHand), String(p.reorderPoint),
+        p.warehouse, p.status,
+      ]),
+    ));
     sections.push("");
   }
 
   if (include("sales")) {
-    sections.push("--- SALES ORDERS ---");
-    sections.push(JSON.stringify(salesOrders, null, 2));
+    sections.push("## SALES ORDERS");
+    sections.push(mdTable(
+      ["Order ID", "Customer", "Date", "Status", "Total", "Items", "Ship Date", "Notes"],
+      salesOrders.map((o) => [
+        o.id, o.customer, o.date, o.status, $(o.total),
+        o.items.map((i) => `${i.sku} x${i.qty}`).join("; "),
+        o.shipDate ?? "TBD", o.notes ?? "",
+      ]),
+    ));
     sections.push("");
   }
 
   if (include("invoices")) {
-    sections.push("--- INVOICES (ACCOUNTS RECEIVABLE) ---");
-    sections.push(JSON.stringify(invoices, null, 2));
+    sections.push("## INVOICES (ACCOUNTS RECEIVABLE)");
+    sections.push(mdTable(
+      ["Invoice", "Customer", "Order", "Date", "Due Date", "Amount", "Paid", "Balance", "Status"],
+      invoices.map((i) => [
+        i.id, i.customer, i.orderId, i.date, i.dueDate,
+        $(i.amount), $(i.paid), $(i.balance), i.status,
+      ]),
+    ));
     sections.push("");
   }
 
   if (include("vendors")) {
-    sections.push("--- VENDORS / SUPPLIERS ---");
-    sections.push(JSON.stringify(vendors, null, 2));
+    sections.push("## VENDORS / SUPPLIERS");
+    sections.push(mdTable(
+      ["ID", "Name", "Contact", "Email", "Phone", "Terms", "Lead Time", "Rating", "Status", "Notes"],
+      vendors.map((v) => [
+        v.id, v.name, v.contact, v.email, v.phone, v.terms,
+        `${v.leadTimeDays}d`, v.rating, v.status, v.notes ?? "",
+      ]),
+    ));
     sections.push("");
   }
 
   if (include("purchaseOrders")) {
-    sections.push("--- PURCHASE ORDERS ---");
-    sections.push(JSON.stringify(purchaseOrders, null, 2));
+    sections.push("## PURCHASE ORDERS");
+    sections.push(mdTable(
+      ["PO", "Vendor", "Date", "Status", "Total", "Items", "Expected", "Notes"],
+      purchaseOrders.map((po) => [
+        po.id, po.vendor, po.date, po.status, $(po.total),
+        po.items.map((i) => `${i.sku} x${i.qty}`).join("; "),
+        po.expectedDate ?? "TBD", po.notes ?? "",
+      ]),
+    ));
     sections.push("");
   }
 
   if (include("payables")) {
-    sections.push("--- ACCOUNTS PAYABLE ---");
-    sections.push(JSON.stringify(accountsPayable, null, 2));
+    sections.push("## ACCOUNTS PAYABLE");
+    sections.push(mdTable(
+      ["ID", "Vendor", "PO", "Invoice Date", "Due Date", "Amount", "Paid", "Balance", "Status"],
+      accountsPayable.map((a) => [
+        a.id, a.vendor, a.poId, a.invoiceDate, a.dueDate,
+        $(a.amount), $(a.paid), $(a.balance), a.status,
+      ]),
+    ));
     sections.push("");
   }
 
   if (include("manufacturing")) {
-    sections.push("--- PRODUCTION LINES ---");
-    sections.push(JSON.stringify(productionLines, null, 2));
+    sections.push("## PRODUCTION LINES");
+    sections.push(mdTable(
+      ["Line", "Name", "Product", "Status", "Shift", "Capacity/hr", "Notes"],
+      productionLines.map((l) => [
+        l.id, l.name, l.currentProduct ?? "Idle", l.status,
+        l.shift, String(l.capacityPerHour), l.notes ?? "",
+      ]),
+    ));
     sections.push("");
-    sections.push("--- OEE METRICS ---");
-    sections.push(JSON.stringify(oeeMetrics, null, 2));
+    sections.push("## OEE METRICS (by line, by date)");
+    sections.push(mdTable(
+      ["Line", "Date", "Availability %", "Performance %", "Quality %", "OEE %", "Units Produced", "Defects", "Downtime Min"],
+      oeeMetrics.map((m) => [
+        m.lineId, m.date,
+        `${m.availability}%`, `${m.performance}%`, `${m.quality}%`, `${m.oee}%`,
+        String(m.unitsProduced), String(m.defects), String(m.downtimeMinutes),
+      ]),
+    ));
     sections.push("");
   }
 
   if (include("compliance")) {
-    sections.push("--- COMPLIANCE GAPS ---");
-    sections.push(JSON.stringify(complianceGaps, null, 2));
+    sections.push("## COMPLIANCE GAPS");
+    sections.push(mdTable(
+      ["ID", "Standard", "Clause", "Area", "Finding", "Severity", "Status", "Owner", "Due Date"],
+      complianceGaps.map((g) => [
+        g.id, g.standard, g.clause, g.area, g.finding,
+        g.severity, g.status, g.owner, g.dueDate,
+      ]),
+    ));
     sections.push("");
-    sections.push("--- AUDIT READINESS ---");
-    sections.push(JSON.stringify(auditReadiness, null, 2));
+    sections.push("## AUDIT READINESS");
+    sections.push(mdTable(
+      ["Area", "Ready %", "Docs Complete", "Docs Total", "Last Reviewed", "Notes"],
+      auditReadiness.map((a) => [
+        a.area, `${a.readyPct}%`, String(a.docsComplete),
+        String(a.docsTotal), a.lastReviewed, a.notes ?? "",
+      ]),
+    ));
     sections.push("");
   }
 
   if (include("employees")) {
-    sections.push("--- EMPLOYEE DIRECTORY ---");
-    sections.push(JSON.stringify(employees, null, 2));
+    sections.push("## EMPLOYEE DIRECTORY");
+    sections.push(mdTable(
+      ["ID", "Name", "Title", "Department", "Email", "Phone", "Location"],
+      employees.map((e) => [
+        e.id, e.name, e.title, e.department, e.email, e.phone, e.location,
+      ]),
+    ));
     sections.push("");
   }
 
   if (include("financials")) {
-    sections.push("--- FINANCIAL SUMMARY ---");
-    sections.push(JSON.stringify(financialSummary, null, 2));
+    sections.push("## FINANCIAL SUMMARY");
+    const f = financialSummary;
+    sections.push(`Period: ${f.period}`);
+    sections.push(`YTD Revenue: ${$(f.ytdRevenue)}`);
+    sections.push(`YTD COGS: ${$(f.ytdCogs)}`);
+    sections.push(`Gross Margin: ${$(f.grossMargin)} (${f.grossMarginPct}%)`);
+    sections.push(`Operating Expenses: ${$(f.operatingExpenses)}`);
+    sections.push(`Net Income: ${$(f.netIncome)}`);
+    sections.push(`AR Total Outstanding: ${$(f.accountsReceivable.totalOutstanding)}`);
+    sections.push(`AR Current: ${$(f.accountsReceivable.current)} | 30+: ${$(f.accountsReceivable.over30)} | 60+: ${$(f.accountsReceivable.over60)} | 90+: ${$(f.accountsReceivable.over90)}`);
+    sections.push(`AP Total Outstanding: ${$(f.accountsPayable.totalOutstanding)}`);
+    sections.push(`Top Customers by Revenue: ${f.topCustomers.map((c) => `${c.name} ${$(c.revenue)} (${c.pct}%)`).join(", ")}`);
     sections.push("");
   }
 
   if (include("emailQueue")) {
-    sections.push("--- EMAIL ORDER QUEUE ---");
-    sections.push(JSON.stringify(emailOrderQueue, null, 2));
+    sections.push("## EMAIL ORDER QUEUE");
+    sections.push(mdTable(
+      ["ID", "From", "Subject", "Received", "Customer", "Status", "PO Number", "Items", "Exception"],
+      emailOrderQueue.map((e) => [
+        e.id, e.from, e.subject, e.received, e.matchedCustomer ?? "Unknown",
+        e.status, e.poNumber ?? "N/A",
+        e.items?.map((i) => `${i.sku ?? i.description} x${i.qty}`).join("; ") ?? "N/A",
+        e.exceptionReason ?? "",
+      ]),
+    ));
     sections.push("");
   }
 

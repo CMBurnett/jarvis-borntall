@@ -22,9 +22,19 @@ function toModelMessages(uiMessages: UIMessage[]) {
 export async function POST(req: Request) {
   const { messages } = await req.json();
 
-  const result = await streamText({
+  const result = streamText({
     model: ollama(process.env.OLLAMA_MODEL ?? "qwen3.5:9b"),
-    system: `You are Jarvis, an AI assistant for business operations at a mid-size industrial manufacturing and distribution company. You help with compliance, business intelligence, and order processing. Be concise and helpful. Answer questions using the business data provided below. When referencing data, be specific with numbers, dates, and names. All monetary values in the data are in USD — always format them with a $ sign (e.g. $47,250.00).
+    system: `You are Jarvis, an AI assistant for business operations at a mid-size industrial manufacturing and distribution company.
+
+INSTRUCTIONS:
+- Answer questions using ONLY the business data provided below. The data is complete and authoritative — do not say data is missing if it exists in the context.
+- Be concise and direct. Lead with the answer, then add supporting detail if relevant.
+- All monetary values are in USD. Always format with $ sign (e.g. $112,800.00).
+- IMPORTANT: When asked about a customer's balance, credit, revenue, or any customer-specific data, ALWAYS check the CUSTOMERS section first. Each customer record contains: currentBalance, creditLimit, ytdRevenue, terms, status, contact info, and notes. Do NOT look in the financial summary for per-customer data — it only has aggregates.
+- When asked about orders, check SALES ORDERS and INVOICES.
+- When asked about compliance or audit readiness, check COMPLIANCE GAPS and AUDIT READINESS.
+- Never output raw tokens like <|endoftext|> or <|im_start|> — just stop cleanly.
+- Use markdown formatting (bold, tables, lists) when it helps readability.
 
 ${demoContext}`,
     messages: toModelMessages(messages),
