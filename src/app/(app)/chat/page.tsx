@@ -1,87 +1,140 @@
-import { Bot, Sparkles, ArrowUp } from "lucide-react";
+"use client";
 
-const SUGGESTIONS = [
-  "Summarize today's compliance gaps",
-  "What's our current OEE trend?",
-  "Which suppliers have active alerts?",
-  "Draft an audit readiness report",
-];
+import { useState, useEffect, useCallback } from "react";
+import { useSearchParams } from "next/navigation";
+import { ChatThread } from "@/components/chat/chat-thread";
+import {
+  getSessions,
+  createSession,
+  deleteSession,
+  updateSessionTitle,
+  deriveTitle,
+} from "@/lib/chat-sessions";
+import type { ChatSession } from "@/lib/chat-sessions";
+import {
+  MessagesSquare,
+  Plus,
+  Trash2,
+  MessageSquare,
+} from "lucide-react";
 
 export default function ChatPage() {
+  const searchParams = useSearchParams();
+  const [sessions, setSessions] = useState<ChatSession[]>([]);
+  const [activeId, setActiveId] = useState<string | null>(null);
+
+  // Load sessions and set active from URL param
+  useEffect(() => {
+    const loaded = getSessions();
+    setSessions(loaded);
+
+    const fromUrl = searchParams.get("session");
+    if (fromUrl && loaded.some((s) => s.id === fromUrl)) {
+      setActiveId(fromUrl);
+    } else if (loaded.length > 0) {
+      setActiveId(loaded[0].id);
+    } else {
+      // No sessions — create one
+      const session = createSession();
+      setSessions([session]);
+      setActiveId(session.id);
+    }
+  }, [searchParams]);
+
+  function handleNewChat() {
+    const session = createSession();
+    setSessions((prev) => [session, ...prev]);
+    setActiveId(session.id);
+  }
+
+  function handleDelete(id: string) {
+    deleteSession(id);
+    setSessions((prev) => {
+      const next = prev.filter((s) => s.id !== id);
+      if (activeId === id) {
+        if (next.length > 0) {
+          setActiveId(next[0].id);
+        } else {
+          const session = createSession();
+          next.push(session);
+          setActiveId(session.id);
+        }
+      }
+      return next;
+    });
+  }
+
+  const handleFirstMessage = useCallback(
+    (text: string) => {
+      if (!activeId) return;
+      const title = deriveTitle(text);
+      updateSessionTitle(activeId, title);
+      setSessions((prev) =>
+        prev.map((s) => (s.id === activeId ? { ...s, title } : s)),
+      );
+    },
+    [activeId],
+  );
+
+  const activeSession = sessions.find((s) => s.id === activeId);
+
   return (
-    <div className="flex flex-col gap-6 max-w-3xl mx-auto">
-      {/* Header */}
-      <div className="flex items-center gap-3 pt-1">
-        <div className="h-9 w-9 rounded-xl bg-brand-gradient flex items-center justify-center shrink-0">
-          <Bot className="h-4 w-4 text-primary-foreground" strokeWidth={1.75} />
-        </div>
-        <div>
-          <h1 className="text-xl font-semibold text-foreground leading-tight">Chat</h1>
-          <p className="text-xs text-muted-foreground">Full-screen conversation with Jarvis</p>
-        </div>
-      </div>
-
-      {/* Placeholder conversation area */}
-      <div className="flex flex-col gap-3 min-h-[340px] rounded-2xl border border-border bg-card p-5">
-        {/* Jarvis message */}
-        <div className="flex items-start gap-3">
-          <div className="h-7 w-7 rounded-lg bg-brand-gradient flex items-center justify-center shrink-0 mt-0.5">
-            <Sparkles className="h-3.5 w-3.5 text-primary-foreground" />
+    <div className="flex gap-4 h-[calc(100vh-3rem)]">
+      {/* Session sidebar */}
+      <div className="w-64 shrink-0 rounded-2xl border border-border bg-card shadow-sm flex flex-col overflow-hidden">
+        <div className="px-4 py-3 border-b border-border/60 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <MessagesSquare className="h-4 w-4 text-muted-foreground" />
+            <span className="text-sm font-semibold text-foreground">Chats</span>
           </div>
-          <div className="rounded-2xl rounded-tl-sm bg-muted px-4 py-3 max-w-md">
-            <p className="text-sm text-foreground leading-relaxed">
-              Hello! I&apos;m Jarvis. Ask me anything about your operations — compliance gaps,
-              OEE trends, order status, or anything else across your connected systems.
-            </p>
-          </div>
-        </div>
-
-        {/* User message placeholder */}
-        <div className="flex justify-end">
-          <div className="rounded-2xl rounded-tr-sm bg-brand-gradient px-4 py-3 max-w-sm">
-            <p className="text-sm text-primary-foreground leading-relaxed">
-              How many open compliance gaps do we have this month?
-            </p>
-          </div>
-        </div>
-
-        {/* Jarvis response */}
-        <div className="flex items-start gap-3">
-          <div className="h-7 w-7 rounded-lg bg-brand-gradient flex items-center justify-center shrink-0 mt-0.5">
-            <Sparkles className="h-3.5 w-3.5 text-primary-foreground" />
-          </div>
-          <div className="rounded-2xl rounded-tl-sm bg-muted px-4 py-3 max-w-md">
-            <p className="text-sm text-foreground leading-relaxed">
-              You currently have <strong>14 open gaps</strong> across ISO 9001 and ISO 14001.
-              3 are flagged as critical and require attention before your audit on April 2nd.
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Input bar */}
-      <div className="rounded-2xl border border-border bg-card shadow-sm overflow-hidden">
-        <div className="flex items-center gap-3 px-4 py-3">
-          <input
-            readOnly
-            placeholder="Ask Jarvis anything…"
-            className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
-          />
-          <div className="flex items-center gap-1.5 flex-wrap">
-            {SUGGESTIONS.slice(0, 2).map((s) => (
-              <span
-                key={s}
-                className="text-xs text-muted-foreground px-2.5 py-1 rounded-full border border-border bg-muted/40"
-              >
-                {s}
-              </span>
-            ))}
-          </div>
-          <button className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-brand-gradient text-primary-foreground shrink-0">
-            <ArrowUp className="h-3 w-3" />
-            Send
+          <button
+            onClick={handleNewChat}
+            className="flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <Plus className="h-3.5 w-3.5" />
+            New
           </button>
         </div>
+
+        <div className="flex-1 overflow-y-auto">
+          {sessions.map((session) => (
+            <div
+              key={session.id}
+              className={`group flex items-center gap-2 px-4 py-2.5 cursor-pointer transition-colors ${
+                session.id === activeId
+                  ? "bg-muted/60"
+                  : "hover:bg-muted/30"
+              }`}
+              onClick={() => setActiveId(session.id)}
+            >
+              <MessageSquare className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+              <span className="text-sm text-foreground truncate flex-1">
+                {session.title}
+              </span>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDelete(session.id);
+                }}
+                className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-opacity shrink-0"
+              >
+                <Trash2 className="h-3 w-3" />
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Chat thread */}
+      <div className="flex-1 rounded-2xl border border-border bg-card shadow-sm overflow-hidden flex flex-col min-h-0">
+        {activeSession && (
+          <ChatThread
+            key={activeId}
+            chatId={activeId!}
+            onFirstMessage={handleFirstMessage}
+            className="flex-1"
+          />
+        )}
       </div>
     </div>
   );

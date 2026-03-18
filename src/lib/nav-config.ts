@@ -1,11 +1,9 @@
 import {
   Home,
-  Bot,
-  ShieldCheck,
-  BarChart3,
-  FileCheck2,
+  MessagesSquare,
+  Gauge,
+  Rocket,
   Settings,
-  ShieldAlert,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -20,12 +18,10 @@ export type NavEntry = {
 
 export const NAV_ENTRIES: NavEntry[] = [
   { order: 1, href: "/",                       label: "Home",                   icon: Home },
-  { order: 2, href: "/chat",                   label: "Chat",                   icon: Bot },
-  { order: 3, href: "/apps/compliance-ready",  label: "ISOReady",               icon: ShieldCheck },
-  { order: 4, href: "/apps/bi-agent",          label: "Business Intelligence",  icon: BarChart3 },
-  { order: 5, href: "/apps/order-processing",  label: "Order Processing",       icon: FileCheck2 },
-  { order: 6, href: "/settings",               label: "Settings",               icon: Settings },
-  { order: 7, href: "/admin",                  label: "Admin",                  icon: ShieldAlert, adminOnly: true },
+  { order: 2, href: "/chat",                   label: "Chat",                   icon: MessagesSquare },
+  { order: 3, href: "/apps/bi-agent",          label: "BI Dashboard",           icon: Gauge },
+  { order: 4, href: "/apps",                   label: "Apps",                   icon: Rocket },
+  { order: 5, href: "/settings",               label: "Settings",               icon: Settings },
 ];
 
 export function getNavOrder(pathname: string): number {

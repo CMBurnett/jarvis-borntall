@@ -24,12 +24,10 @@ import { NAV_ENTRIES, getNavOrder } from "@/lib/nav-config";
 import type { NavEntry } from "@/lib/nav-config";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 
-// Primary nav: Home + Chat
-const primaryNav = NAV_ENTRIES.filter((e) => e.order <= 2);
-// App nav: the 3 apps
-const appNav = NAV_ENTRIES.filter((e) => e.order >= 3 && e.order <= 5);
-// Bottom nav: Settings + Admin
-const bottomNav = NAV_ENTRIES.filter((e) => e.order >= 6);
+// Primary nav: Home, Chat, BI Dashboard, Apps
+const primaryNav = NAV_ENTRIES.filter((e) => e.order <= 4);
+// Bottom nav: Settings
+const bottomNav = NAV_ENTRIES.filter((e) => e.order >= 5);
 
 function NavItem({
   entry,
@@ -89,23 +87,12 @@ export function NavSidebar({
 
   return (
     <aside className="fixed left-3 top-3 bottom-3 z-40 flex w-16 flex-col rounded-2xl border border-border bg-card shadow-md">
-      {/* Logo mark */}
-      <div className="flex h-16 items-center justify-center shrink-0">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-gradient">
-          <span className="text-primary-foreground font-semibold text-sm">J</span>
-        </div>
-      </div>
+      {/* Spacer for top */}
+      <div className="h-4 shrink-0" />
 
-      {/* Primary nav: Home, Chat */}
+      {/* Primary nav */}
       <nav className="flex flex-1 flex-col items-center gap-1.5 px-3 py-2">
         {primaryNav.map((entry) => (
-          <NavItem key={entry.href} entry={entry} active={isActive(entry)} />
-        ))}
-
-        <NavDivider />
-
-        {/* App shortcuts */}
-        {appNav.map((entry) => (
           <NavItem key={entry.href} entry={entry} active={isActive(entry)} />
         ))}
       </nav>
@@ -117,8 +104,6 @@ export function NavSidebar({
           .map((entry) => (
             <NavItem key={entry.href} entry={entry} active={isActive(entry)} />
           ))}
-
-        <div className="w-8 border-t border-border my-0.5" />
 
         {/* Theme toggle */}
         <Tooltip>

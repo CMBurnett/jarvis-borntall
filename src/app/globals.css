@@ -142,7 +142,7 @@
   --sidebar-ring: oklch(0.556 0 0);
 
   /* Dot background */
-  --dot-color: oklch(0.22 0 0);
+  --dot-color: oklch(0.28 0 0);
 
   /* Brand glow */
   --brand-glow: oklch(0.46 0.22 25 / 0.08);

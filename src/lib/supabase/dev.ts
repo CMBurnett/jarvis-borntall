@@ -7,9 +7,9 @@ export function isSupabaseConfigured(): boolean {
 
 export const DEV_USER: User = {
   id: "dev-user-id",
-  email: "dev@jarvis.local",
+  email: "br@jarvis.local",
   app_metadata: {},
-  user_metadata: { full_name: "Dev User" },
+  user_metadata: { full_name: "Bill" },
   aud: "authenticated",
   created_at: new Date().toISOString(),
 } as User;
