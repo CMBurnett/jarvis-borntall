@@ -1,3 +1,4 @@
+import Link from "next/link";
 import {
   LayoutDashboard,
   TrendingUp,
@@ -7,6 +8,7 @@ import {
   Users,
   AlertTriangle,
   Clock,
+  ArrowLeft,
 } from "lucide-react";
 
 const KPIS = [
@@ -59,6 +61,9 @@ export default function DashboardPage() {
       {/* Header */}
       <div className="flex items-center justify-between pt-1">
         <div className="flex items-center gap-3">
+          <Link href="/apps" className="flex items-center justify-center h-7 w-7 rounded-lg hover:bg-muted transition-colors shrink-0">
+            <ArrowLeft className="h-4 w-4 text-muted-foreground" />
+          </Link>
           <div className="h-9 w-9 rounded-xl bg-linear-to-br from-violet-500 to-purple-600 flex items-center justify-center shrink-0">
             <LayoutDashboard className="h-4 w-4 text-white" strokeWidth={1.75} />
           </div>

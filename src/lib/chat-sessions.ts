@@ -30,9 +30,9 @@ export function getSessions(): ChatSession[] {
   return readSessions().sort((a, b) => b.createdAt - a.createdAt);
 }
 
-export function createSession(title?: string): ChatSession {
+export function createSession(title?: string, id?: string): ChatSession {
   const session: ChatSession = {
-    id: crypto.randomUUID(),
+    id: id ?? crypto.randomUUID(),
     title: title ?? "New chat",
     createdAt: Date.now(),
   };

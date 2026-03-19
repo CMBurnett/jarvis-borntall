@@ -1,4 +1,5 @@
-import { FileCheck2, Mail, Clock, CheckCircle2, AlertCircle, ArrowUpRight } from "lucide-react";
+import Link from "next/link";
+import { FileCheck2, Mail, Clock, CheckCircle2, AlertCircle, ArrowUpRight, ArrowLeft } from "lucide-react";
 
 const ORDERS = [
   { id: "ORD-2841", customer: "Pelseal Ltd",       items: 4, value: "$3,200", status: "approved",  received: "9:14am" },
@@ -27,6 +28,9 @@ export default function OrderProcessingPage() {
       {/* Header */}
       <div className="flex items-center justify-between pt-1">
         <div className="flex items-center gap-3">
+          <Link href="/apps" className="flex items-center justify-center h-7 w-7 rounded-lg hover:bg-muted transition-colors shrink-0">
+            <ArrowLeft className="h-4 w-4 text-muted-foreground" />
+          </Link>
           <div className="h-9 w-9 rounded-xl bg-linear-to-br from-teal-500 to-cyan-500 flex items-center justify-center shrink-0">
             <FileCheck2 className="h-4 w-4 text-white" strokeWidth={1.75} />
           </div>

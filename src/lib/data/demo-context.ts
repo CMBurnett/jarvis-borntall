@@ -1460,9 +1460,9 @@ export function buildDemoContext(
     sections.push(mdTable(
       ["Order ID", "Customer", "Date", "Status", "Total", "Items", "Ship Date", "Notes"],
       salesOrders.map((o) => [
-        o.id, o.customer, o.date, o.status, $(o.total),
-        o.items.map((i) => `${i.sku} x${i.qty}`).join("; "),
-        o.shipDate ?? "TBD", o.notes ?? "",
+        o.orderNo, o.customerName, o.orderDate, o.status, $(o.total),
+        (o.lines ?? []).map((i) => `${i.sku} x${i.qty}`).join("; "),
+        o.requestedShipDate ?? "TBD", o.notes ?? "",
       ]),
     ));
     sections.push("");
@@ -1473,7 +1473,7 @@ export function buildDemoContext(
     sections.push(mdTable(
       ["Invoice", "Customer", "Order", "Date", "Due Date", "Amount", "Paid", "Balance", "Status"],
       invoices.map((i) => [
-        i.id, i.customer, i.orderId, i.date, i.dueDate,
+        i.invoiceNo, i.customerName, i.orderNo, i.invoiceDate, i.dueDate,
         $(i.amount), $(i.paid), $(i.balance), i.status,
       ]),
     ));
@@ -1497,9 +1497,9 @@ export function buildDemoContext(
     sections.push(mdTable(
       ["PO", "Vendor", "Date", "Status", "Total", "Items", "Expected", "Notes"],
       purchaseOrders.map((po) => [
-        po.id, po.vendor, po.date, po.status, $(po.total),
-        po.items.map((i) => `${i.sku} x${i.qty}`).join("; "),
-        po.expectedDate ?? "TBD", po.notes ?? "",
+        po.poNumber, po.vendorName, po.orderDate, po.status, $(po.total),
+        (po.lines ?? []).map((i) => `${i.sku} x${i.qty}`).join("; "),
+        po.expectedDelivery ?? "TBD", po.notes ?? "",
       ]),
     ));
     sections.push("");
@@ -1508,11 +1508,12 @@ export function buildDemoContext(
   if (include("payables")) {
     sections.push("## ACCOUNTS PAYABLE");
     sections.push(mdTable(
-      ["ID", "Vendor", "PO", "Invoice Date", "Due Date", "Amount", "Paid", "Balance", "Status"],
-      accountsPayable.map((a) => [
-        a.id, a.vendor, a.poId, a.invoiceDate, a.dueDate,
-        $(a.amount), $(a.paid), $(a.balance), a.status,
-      ]),
+      ["Vendor", "Vendor Name", "Bill No", "Amount", "Due Date", "Status"],
+      accountsPayable.flatMap((a) =>
+        (a.bills ?? []).map((b) => [
+          a.vendor, a.vendorName, b.billNo, $(b.amount), b.dueDate, b.status,
+        ]),
+      ),
     ));
     sections.push("");
   }
@@ -1520,20 +1521,20 @@ export function buildDemoContext(
   if (include("manufacturing")) {
     sections.push("## PRODUCTION LINES");
     sections.push(mdTable(
-      ["Line", "Name", "Product", "Status", "Shift", "Capacity/hr", "Notes"],
+      ["Line", "Name", "Current Job", "Status", "Operator", "Shift"],
       productionLines.map((l) => [
-        l.id, l.name, l.currentProduct ?? "Idle", l.status,
-        l.shift, String(l.capacityPerHour), l.notes ?? "",
+        l.lineId, l.name, l.currentJob ?? "Idle", l.status,
+        l.operator ?? "", l.shift ?? "",
       ]),
     ));
     sections.push("");
-    sections.push("## OEE METRICS (by line, by date)");
+    sections.push(`## OEE METRICS (${oeeMetrics.period})`);
+    sections.push(`Overall: Availability ${oeeMetrics.overall.availability}% | Performance ${oeeMetrics.overall.performance}% | Quality ${oeeMetrics.overall.quality}% | OEE ${oeeMetrics.overall.oee}%`);
     sections.push(mdTable(
-      ["Line", "Date", "Availability %", "Performance %", "Quality %", "OEE %", "Units Produced", "Defects", "Downtime Min"],
-      oeeMetrics.map((m) => [
-        m.lineId, m.date,
+      ["Line", "Name", "Availability %", "Performance %", "Quality %", "OEE %"],
+      oeeMetrics.byLine.map((m) => [
+        m.lineId, m.name,
         `${m.availability}%`, `${m.performance}%`, `${m.quality}%`, `${m.oee}%`,
-        String(m.unitsProduced), String(m.defects), String(m.downtimeMinutes),
       ]),
     ));
     sections.push("");
@@ -1544,18 +1545,18 @@ export function buildDemoContext(
     sections.push(mdTable(
       ["ID", "Standard", "Clause", "Area", "Finding", "Severity", "Status", "Owner", "Due Date"],
       complianceGaps.map((g) => [
-        g.id, g.standard, g.clause, g.area, g.finding,
-        g.severity, g.status, g.owner, g.dueDate,
+        g.id, g.standard, g.clause, g.area, g.description,
+        g.severity, g.status, g.assignee, g.dueDate,
       ]),
     ));
     sections.push("");
     sections.push("## AUDIT READINESS");
+    sections.push(`Overall Score: ${auditReadiness.overallScore}%`);
+    sections.push(`Next Audit: ${auditReadiness.nextAuditDate} (${auditReadiness.auditType}) by ${auditReadiness.auditor}`);
+    sections.push(`Gap Summary: ${auditReadiness.gapSummary.total} total — ${auditReadiness.gapSummary.critical} critical, ${auditReadiness.gapSummary.high} high, ${auditReadiness.gapSummary.medium} medium, ${auditReadiness.gapSummary.low} low`);
     sections.push(mdTable(
-      ["Area", "Ready %", "Docs Complete", "Docs Total", "Last Reviewed", "Notes"],
-      auditReadiness.map((a) => [
-        a.area, `${a.readyPct}%`, String(a.docsComplete),
-        String(a.docsTotal), a.lastReviewed, a.notes ?? "",
-      ]),
+      ["Clause", "Score %"],
+      auditReadiness.readinessByClause.map((c) => [c.clause, `${c.score}%`]),
     ));
     sections.push("");
   }
@@ -1563,9 +1564,9 @@ export function buildDemoContext(
   if (include("employees")) {
     sections.push("## EMPLOYEE DIRECTORY");
     sections.push(mdTable(
-      ["ID", "Name", "Title", "Department", "Email", "Phone", "Location"],
+      ["Name", "Role", "Department", "Email"],
       employees.map((e) => [
-        e.id, e.name, e.title, e.department, e.email, e.phone, e.location,
+        e.name, e.role, e.dept, e.email,
       ]),
     ));
     sections.push("");
@@ -1575,26 +1576,22 @@ export function buildDemoContext(
     sections.push("## FINANCIAL SUMMARY");
     const f = financialSummary;
     sections.push(`Period: ${f.period}`);
-    sections.push(`YTD Revenue: ${$(f.ytdRevenue)}`);
-    sections.push(`YTD COGS: ${$(f.ytdCogs)}`);
-    sections.push(`Gross Margin: ${$(f.grossMargin)} (${f.grossMarginPct}%)`);
-    sections.push(`Operating Expenses: ${$(f.operatingExpenses)}`);
-    sections.push(`Net Income: ${$(f.netIncome)}`);
-    sections.push(`AR Total Outstanding: ${$(f.accountsReceivable.totalOutstanding)}`);
-    sections.push(`AR Current: ${$(f.accountsReceivable.current)} | 30+: ${$(f.accountsReceivable.over30)} | 60+: ${$(f.accountsReceivable.over60)} | 90+: ${$(f.accountsReceivable.over90)}`);
-    sections.push(`AP Total Outstanding: ${$(f.accountsPayable.totalOutstanding)}`);
-    sections.push(`Top Customers by Revenue: ${f.topCustomers.map((c) => `${c.name} ${$(c.revenue)} (${c.pct}%)`).join(", ")}`);
+    sections.push(`YTD Revenue: ${$(f.revenue.ytd)} (Prior Year: ${$(f.revenue.priorYearYtd)}, Growth: ${f.revenue.growthPct}%)`);
+    sections.push(`YTD COGS: ${$(f.costOfGoodsSold.ytd)} (Gross Margin: ${f.costOfGoodsSold.grossMarginPct}%)`);
+    sections.push(`AR Total Outstanding: ${$(f.accountsReceivable.totalOutstanding)} (DSO: ${f.accountsReceivable.dso} days)`);
+    sections.push(`AR Current: ${$(f.accountsReceivable.current)} | 30+: ${$(f.accountsReceivable.pastDue30)} | 60+: ${$(f.accountsReceivable.pastDue60)} | 90+: ${$(f.accountsReceivable.pastDue90)}`);
+    sections.push(`AP Total Outstanding: ${$(f.accountsPayable.totalOutstanding)} (Past Due: ${$(f.accountsPayable.pastDue)})`);
+    sections.push(`Top Customers by Revenue: ${f.topCustomersByRevenue.map((c) => `${c.customer} ${$(c.revenue)} (${c.pct}%)`).join(", ")}`);
     sections.push("");
   }
 
   if (include("emailQueue")) {
     sections.push("## EMAIL ORDER QUEUE");
     sections.push(mdTable(
-      ["ID", "From", "Subject", "Received", "Customer", "Status", "PO Number", "Items", "Exception"],
+      ["ID", "From", "Subject", "Received", "Status", "Items", "Exception"],
       emailOrderQueue.map((e) => [
-        e.id, e.from, e.subject, e.received, e.matchedCustomer ?? "Unknown",
-        e.status, e.poNumber ?? "N/A",
-        e.items?.map((i) => `${i.sku ?? i.description} x${i.qty}`).join("; ") ?? "N/A",
+        e.id, e.from, e.subject, e.receivedAt, e.status,
+        (e.parsedItems ?? []).map((i: { description: string; matchedSku: string | null; qty: number }) => `${i.matchedSku ?? i.description} x${i.qty}`).join("; "),
         e.exceptionReason ?? "",
       ]),
     ));

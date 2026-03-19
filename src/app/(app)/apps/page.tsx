@@ -7,7 +7,7 @@ import {
   Wrench,
   ClipboardList,
   ArrowUpRight,
-  Grid2x2,
+  Rocket,
 } from "lucide-react";
 
 const APPS = [
@@ -71,8 +71,8 @@ export default function AppsPage() {
   return (
     <div className="flex flex-col gap-6 max-w-4xl mx-auto">
       <div className="flex items-center gap-3 pt-1">
-        <div className="h-9 w-9 rounded-xl bg-muted flex items-center justify-center shrink-0">
-          <Grid2x2 className="h-4 w-4 text-foreground" strokeWidth={1.75} />
+        <div className="h-9 w-9 rounded-xl bg-linear-to-br from-orange-500 to-rose-500 flex items-center justify-center shrink-0">
+          <Rocket className="h-4 w-4 text-white" strokeWidth={1.75} />
         </div>
         <div>
           <h1 className="text-xl font-semibold text-foreground leading-tight">Apps</h1>

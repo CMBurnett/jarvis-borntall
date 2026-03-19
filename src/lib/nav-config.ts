@@ -18,7 +18,7 @@ export type NavEntry = {
 
 export const NAV_ENTRIES: NavEntry[] = [
   { order: 1, href: "/",                       label: "Home",                   icon: Home },
-  { order: 2, href: "/chat",                   label: "Chat",                   icon: MessagesSquare },
+  { order: 2, href: "/chat",                   label: "Jarvis Chat",            icon: MessagesSquare },
   { order: 3, href: "/apps/bi-agent",          label: "BI Dashboard",           icon: Gauge },
   { order: 4, href: "/apps",                   label: "Apps",                   icon: Rocket },
   { order: 5, href: "/settings",               label: "Settings",               icon: Settings },
