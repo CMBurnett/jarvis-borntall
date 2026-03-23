@@ -1,0 +1,3 @@
+[submodule "agents/iso-ready"]
+	path = agents/iso-ready
+	url = https://github.com/CMBurnett/iso-ready.git
