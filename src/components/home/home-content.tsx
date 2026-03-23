@@ -160,16 +160,11 @@ export function HomeContent({ name }: { name: string }) {
       <div className="grid grid-cols-3 gap-3">
         {APPS.map((app) => {
           const isActive = app.status === "active";
-          const Wrapper = isActive ? Link : "div";
-          return (
-            <Wrapper
+          return isActive ? (
+            <Link
               key={app.id}
-              {...(isActive ? { href: `/apps/${app.id}` } : {})}
-              className={`group rounded-xl border border-border shadow-sm px-4 py-3 flex items-center gap-3 transition-colors ${
-                isActive
-                  ? "bg-card/60 hover:bg-card cursor-pointer"
-                  : "bg-card/60 cursor-default"
-              }`}
+              href={`/apps/${app.id}`}
+              className="group rounded-xl border border-border shadow-sm px-4 py-3 flex items-center gap-3 transition-colors bg-card/60 hover:bg-card cursor-pointer"
             >
               <div
                 className={`h-9 w-9 rounded-lg bg-linear-to-br ${app.gradient} flex items-center justify-center shrink-0`}
@@ -202,7 +197,27 @@ export function HomeContent({ name }: { name: string }) {
                   <ArrowUpRight className="h-3.5 w-3.5" />
                 </span>
               )}
-            </Wrapper>
+            </Link>
+          ) : (
+            <div
+              key={app.id}
+              className="group rounded-xl border border-border shadow-sm px-4 py-3 flex items-center gap-3 transition-colors bg-card/60 cursor-default"
+            >
+              <div
+                className={`h-9 w-9 rounded-lg bg-linear-to-br ${app.gradient} flex items-center justify-center shrink-0`}
+              >
+                <app.Icon className="h-4 w-4 text-white" strokeWidth={1.75} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium text-foreground">{app.name}</span>
+                  <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-muted text-muted-foreground">
+                    Inactive
+                  </span>
+                </div>
+                <p className="text-xs text-muted-foreground truncate">{app.stats}</p>
+              </div>
+            </div>
           );
         })}
       </div>

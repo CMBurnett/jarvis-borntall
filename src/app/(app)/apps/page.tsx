@@ -12,13 +12,13 @@ import {
 
 const APPS = [
   {
-    id: "compliance-ready",
-    name: "ISOReady",
-    description: "ISO gap analysis, audit prep, and compliance tracking across standards and regulatory frameworks.",
+    id: "iso-ready",
+    name: "ISO Ready",
+    description: "AI-powered ISO compliance gap analysis and audit readiness platform. Upload documents, assess clauses, and generate gap reports.",
     Icon: ShieldCheck,
     gradient: "from-blue-500 to-indigo-500",
     status: "active" as const,
-    stats: "ISO 9001 · 14 gaps open",
+    stats: "AS9100 · ISO 14001 · ISO 45001",
   },
   {
     id: "bi-agent",

@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useChat } from "@ai-sdk/react";
+import { DefaultChatTransport } from "ai";
 import { Sparkles, ArrowUp, User } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 
@@ -17,8 +18,8 @@ export function ChatThread({
   footer?: React.ReactNode;
 }) {
   const { messages, sendMessage, status, error } = useChat({
-    api: "/api/chat",
     id: chatId,
+    transport: new DefaultChatTransport({ api: "/api/chat" }),
   });
   const [input, setInput] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
