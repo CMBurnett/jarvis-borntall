@@ -2,6 +2,7 @@
 
 import { useState, useRef } from "react";
 import Link from "next/link";
+import { BrandLogos } from "@/components/brand-logos";
 import {
   ShieldCheck,
   Plus,
@@ -206,6 +207,7 @@ function AssessmentList({
         backHref="/apps"
         title="ISOReady"
         subtitle="ISO assessment and gap analysis"
+        action={<BrandLogos />}
       />
 
       {/* New assessment form */}
@@ -551,6 +553,7 @@ function AssessmentDetail({
         onBack={onBack}
         title={assessment.name}
         subtitle={`${formatDate(assessment.date)} · ${totalClauses} clauses assessed · ${assessment.standards.map((s) => STANDARD_LABELS[s].short).join(" + ")}`}
+        action={<BrandLogos />}
       />
 
       {/* Overview cards */}

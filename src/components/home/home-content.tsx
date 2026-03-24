@@ -17,7 +17,7 @@ import {
 
 const APPS = [
   {
-    id: "compliance-ready",
+    id: "iso-ready",
     name: "ISOReady",
     description: "ISO gap analysis, audit prep, and compliance tracking.",
     Icon: ShieldCheck,
