@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { getLLMProvider } from '@iso-ready/lib/providers/llm/index'
-import { getEmbeddingProvider } from '@iso-ready/lib/providers/embeddings/index'
+import { getLLMProvider } from '@/lib/providers/llm'
+import { getEmbeddingProvider } from '@/lib/providers/embeddings'
 import { NextResponse } from 'next/server'
 
 export async function POST(request: Request) {
@@ -43,13 +43,11 @@ export async function POST(request: Request) {
       )
     }
 
-    // Embed all clause queries in batches
-    const EMBED_BATCH = 50
+    // Embed all clause queries (using search_query prefix for nomic)
     const clauseEmbeddings: number[][] = []
-    for (let i = 0; i < clauses.length; i += EMBED_BATCH) {
-      const batch = clauses.slice(i, i + EMBED_BATCH)
-      const embs = await embedder.embed(batch.map(c => `${c.title}: ${c.shall_text}`))
-      clauseEmbeddings.push(...embs)
+    for (const clause of clauses) {
+      const emb = await embedder.embedQuery(`${clause.title}: ${clause.shall_text}`)
+      clauseEmbeddings.push(emb)
     }
 
     // Assess each clause
@@ -85,7 +83,7 @@ export async function POST(request: Request) {
           assessment_id: assessmentId,
           org_id: assessment.org_id,
           clause_id: clause.id,
-          provider: 'anthropic',
+          provider: 'ollama',
           status: result.status,
           evidence_summary: result.evidence_summary,
           gap_description: result.gap_description,
