@@ -12,6 +12,7 @@ import {
   ChevronDown,
   X as XMark,
   Check,
+  ClipboardList,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 
@@ -203,11 +204,11 @@ export default function ReportClient({ assessmentId }: { assessmentId: string })
     return true
   })
 
-  // Sort: gaps first (P1 first), then partial, then evidenced
-  const statusOrder = { gap: 0, partial: 1, evidenced: 2 }
+  // Sort: evidenced first, then by priority (P1, P2, P3)
   const sorted = [...filtered].sort((a, b) => {
-    const sd = statusOrder[a._status] - statusOrder[b._status]
-    if (sd !== 0) return sd
+    const aEvidenced = a._status === 'evidenced' ? 0 : 1
+    const bEvidenced = b._status === 'evidenced' ? 0 : 1
+    if (aEvidenced !== bEvidenced) return aEvidenced - bEvidenced
     return (a.priority ?? 3) - (b.priority ?? 3)
   })
 
@@ -234,40 +235,6 @@ export default function ReportClient({ assessmentId }: { assessmentId: string })
         </div>
       </div>
 
-      {/* Processing banner */}
-      {isProcessing && (
-        <div className="flex items-center gap-2.5 px-4 py-3 rounded-xl border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/30 text-sm text-blue-700 dark:text-blue-300">
-          <Loader2 className="h-4 w-4 animate-spin shrink-0" />
-          Assessment in progress — {clauses.length} clause{clauses.length !== 1 ? 's' : ''} assessed so far. Updates every 5s.
-        </div>
-      )}
-
-      {/* Per-standard score cards */}
-      {standards.length > 0 && (
-        <div className={`grid gap-3 ${standards.length === 1 ? 'grid-cols-1' : standards.length === 2 ? 'grid-cols-2' : standards.length === 3 ? 'grid-cols-3' : 'grid-cols-2 sm:grid-cols-4'}`}>
-          {standards.map((std) => {
-            const s = perStandard[std]
-            const pct = s.total > 0 ? Math.round((s.evidenced / s.total) * 100) : 0
-            return (
-              <button
-                key={std}
-                onClick={() => setFilterStandard(filterStandard === std ? 'all' : std)}
-                className={`rounded-xl border p-4 text-center transition-colors cursor-pointer ${
-                  filterStandard === std
-                    ? 'border-foreground/30 bg-muted/50'
-                    : 'border-border bg-card hover:bg-muted/30'
-                }`}
-              >
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-1">
-                  {STANDARD_LABELS[std] ?? std.toUpperCase()}
-                </p>
-                <p className="text-3xl font-bold text-foreground tabular-nums">{pct}%</p>
-                <p className="text-[11px] text-muted-foreground mt-0.5">{s.total} clauses</p>
-              </button>
-            )
-          })}
-        </div>
-      )}
 
       {/* Status summary pills */}
       {totalAssessed > 0 && (
@@ -321,7 +288,7 @@ export default function ReportClient({ assessmentId }: { assessmentId: string })
 
       {/* Clause list */}
       {sorted.length > 0 ? (
-        <div className="flex flex-col gap-1.5">
+        <div className="flex flex-col gap-2">
           {sorted.map((c) => {
             const cfg = STATUS_CONFIG[c._status]
             const Icon = STATUS_ICON[c._status] ?? XCircle
@@ -331,70 +298,74 @@ export default function ReportClient({ assessmentId }: { assessmentId: string })
             const evidenceTypes = c.iso_clauses?.evidence_types
 
             return (
-              <div key={c.id} className="rounded-xl border border-border bg-card overflow-hidden">
+              <div key={c.id} className="rounded-xl border border-border bg-card overflow-hidden transition-shadow hover:shadow-sm">
                 {/* Summary row */}
                 <button
                   onClick={() => setExpandedId(isOpen ? null : c.id)}
-                  className="flex items-center gap-3 w-full px-4 py-3 text-left cursor-pointer hover:bg-muted/30 transition-colors"
+                  className="flex items-center gap-3 w-full px-4 py-3.5 text-left cursor-pointer hover:bg-muted/20 transition-colors"
                 >
-                  <span className={`h-2.5 w-2.5 rounded-full shrink-0 ${cfg.dot}`} />
-                  <span className="text-sm font-mono font-semibold text-foreground shrink-0 w-14 tabular-nums">
+                  <Icon className={`h-4 w-4 shrink-0 ${cfg.text}`} strokeWidth={2} />
+                  <span className="text-sm font-mono font-semibold text-foreground shrink-0 w-12 tabular-nums">
                     {c._number}
                   </span>
-                  <span className="text-sm text-foreground flex-1 min-w-0 truncate">
+                  <span className="text-sm text-foreground flex-1 min-w-0 leading-snug">
                     {c._title}
                   </span>
-                  {/* Standard badge */}
-                  {standards.length > 1 && (
-                    <span className="text-[10px] font-medium px-2 py-0.5 rounded-md border border-border text-muted-foreground shrink-0">
-                      {STANDARD_SHORT[c._standard] ?? c._standard.toUpperCase()}
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    {/* Standard badge */}
+                    {standards.length > 1 && (
+                      <span className="hidden sm:inline-flex text-[10px] font-medium px-2 py-0.5 rounded-md border border-border text-muted-foreground">
+                        {STANDARD_SHORT[c._standard] ?? c._standard.toUpperCase()}
+                      </span>
+                    )}
+                    {/* Priority badge (gaps and partials only) */}
+                    {c._status !== 'evidenced' && pri && (
+                      <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-md border ${pri.color}`}>
+                        {pri.label}
+                      </span>
+                    )}
+                    {/* Status badge */}
+                    <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-md border ${cfg.badge}`}>
+                      {cfg.label}
                     </span>
-                  )}
-                  {/* Priority badge (gaps and partials only) */}
-                  {c._status !== 'evidenced' && pri && (
-                    <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-md border shrink-0 ${pri.color}`}>
-                      {pri.label}
-                    </span>
-                  )}
-                  {/* Status badge */}
-                  <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-md border shrink-0 ${cfg.badge}`}>
-                    {cfg.label}
-                  </span>
-                  <ChevronDown className={`h-4 w-4 text-muted-foreground shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+                  </div>
+                  <ChevronDown className={`h-4 w-4 text-muted-foreground/60 shrink-0 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
                 </button>
 
                 {/* Expanded detail */}
                 {isOpen && (
-                  <div className="border-t border-border px-4 py-4 space-y-4 text-sm">
+                  <div className="border-t border-border divide-y divide-border/60 text-sm">
+
                     {/* Evidence checklist */}
                     {(evidenceChecks || evidenceTypes) && (
-                      <div>
-                        <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-2">
+                      <div className="px-5 py-4">
+                        <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-3">
                           Evidence Checklist
                         </p>
-                        <div className="space-y-1.5">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
                           {evidenceChecks ? (
                             Object.entries(evidenceChecks).map(([key, found]) => (
-                              <div key={key} className="flex items-start gap-2">
+                              <div
+                                key={key}
+                                className={`flex items-center gap-2 px-2.5 py-1.5 rounded-md text-xs font-medium border ${
+                                  found
+                                    ? 'bg-emerald-500/8 border-emerald-500/20 text-emerald-700 dark:text-emerald-300'
+                                    : 'bg-red-500/8 border-red-500/20 text-red-700 dark:text-red-400'
+                                }`}
+                              >
                                 {found ? (
-                                  <Check className="h-3.5 w-3.5 mt-0.5 text-emerald-500 shrink-0" />
+                                  <Check className="h-3 w-3 text-emerald-500 shrink-0" />
                                 ) : (
-                                  <XMark className="h-3.5 w-3.5 mt-0.5 text-red-500 shrink-0" />
+                                  <XMark className="h-3 w-3 text-red-500 shrink-0" />
                                 )}
-                                <span className={`text-sm ${found ? 'text-foreground' : 'text-muted-foreground'}`}>
-                                  {formatEvidenceType(key)}
-                                  {!found && <span className="text-muted-foreground/60 ml-1.5">— not found</span>}
-                                </span>
+                                {formatEvidenceType(key)}
                               </div>
                             ))
                           ) : evidenceTypes ? (
                             evidenceTypes.map((et) => (
-                              <div key={et} className="flex items-start gap-2">
-                                <XMark className="h-3.5 w-3.5 mt-0.5 text-muted-foreground/40 shrink-0" />
-                                <span className="text-sm text-muted-foreground">
-                                  {formatEvidenceType(et)}
-                                  <span className="text-muted-foreground/60 ml-1.5">— not assessed</span>
-                                </span>
+                              <div key={et} className="flex items-center gap-2 px-2.5 py-1.5 rounded-md text-xs font-medium border border-border bg-muted/20 text-muted-foreground/60">
+                                <span className="h-3 w-3 rounded-full border border-muted-foreground/20 shrink-0" />
+                                {formatEvidenceType(et)}
                               </div>
                             ))
                           ) : null}
@@ -404,25 +375,34 @@ export default function ReportClient({ assessmentId }: { assessmentId: string })
 
                     {/* Evidence summary */}
                     {c.evidence_summary && c.evidence_summary !== 'Unable to parse LLM assessment response' && c.evidence_summary !== 'Assessment failed due to error' && (
-                      <div>
-                        <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-1">Evidence</p>
-                        <p className="text-foreground leading-relaxed">{c.evidence_summary}</p>
+                      <div className="px-5 py-4">
+                        <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-3">Evidence</p>
+                        <div className="pl-3 border-l-2 border-emerald-500/30">
+                          <p className="text-foreground/85 leading-relaxed">{c.evidence_summary}</p>
+                        </div>
                       </div>
                     )}
 
                     {/* Gap + Action side by side for non-evidenced */}
                     {c._status !== 'evidenced' && (c.gap_description || c.action_item) && (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className={`grid grid-cols-1 ${c.gap_description && c.action_item ? 'sm:grid-cols-2' : ''} divide-y sm:divide-y-0 sm:divide-x divide-border/60`}>
                         {c.gap_description && (
-                          <div>
-                            <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-1">Gap</p>
-                            <p className="text-foreground leading-relaxed">{c.gap_description}</p>
+                          <div className="px-5 py-4">
+                            <p className="text-[10px] font-semibold uppercase tracking-widest text-red-500/80 dark:text-red-400/80 mb-3">Gap</p>
+                            <div className="pl-3 border-l-2 border-red-400/40">
+                              <p className="text-foreground/85 leading-relaxed">{c.gap_description}</p>
+                            </div>
                           </div>
                         )}
                         {c.action_item && (
-                          <div>
-                            <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-1">Action Required</p>
-                            <p className="text-foreground leading-relaxed">{c.action_item}</p>
+                          <div className="px-5 py-4">
+                            <div className="rounded-lg border border-amber-500/25 bg-amber-500/8">
+                              <div className="flex items-center gap-2 px-4 py-2.5 border-b border-amber-500/15">
+                                <ClipboardList className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
+                                <p className="text-[10px] font-semibold uppercase tracking-widest text-amber-600/80 dark:text-amber-400/80">Action Required</p>
+                              </div>
+                              <p className="px-4 py-3.5 text-foreground/85 leading-relaxed text-sm">{c.action_item}</p>
+                            </div>
                           </div>
                         )}
                       </div>
@@ -430,15 +410,16 @@ export default function ReportClient({ assessmentId }: { assessmentId: string })
 
                     {/* Interview questions */}
                     {c.interview_questions && c.interview_questions.length > 0 && (
-                      <div>
-                        <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-1">Interview Questions</p>
-                        <ul className="space-y-1">
+                      <div className="px-5 py-4">
+                        <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground mb-3">Possible Auditor Questions</p>
+                        <ol className="space-y-2.5">
                           {c.interview_questions.map((q, i) => (
-                            <li key={i} className="text-foreground leading-relaxed pl-4 relative before:content-[''] before:absolute before:left-0 before:top-[9px] before:h-1 before:w-1 before:rounded-full before:bg-muted-foreground/40">
-                              {q}
+                            <li key={i} className="flex items-start gap-3">
+                              <span className="shrink-0 font-mono text-[10px] font-bold text-muted-foreground/50 mt-0.5 tabular-nums w-5 leading-relaxed">Q{i + 1}</span>
+                              <p className="text-foreground/85 leading-relaxed">{q}</p>
                             </li>
                           ))}
-                        </ul>
+                        </ol>
                       </div>
                     )}
                   </div>

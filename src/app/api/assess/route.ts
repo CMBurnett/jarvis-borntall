@@ -6,7 +6,7 @@ import { NextResponse } from 'next/server'
 
 export async function POST(request: Request) {
   try {
-    const { assessmentId } = await request.json()
+    const { assessmentId, clauseId } = await request.json()
     if (!assessmentId) return NextResponse.json({ error: 'Missing assessmentId' }, { status: 400 })
 
     const supabase = await createClient()
@@ -25,16 +25,22 @@ export async function POST(request: Request) {
 
     if (!assessment) return NextResponse.json({ error: 'Assessment not found' }, { status: 404 })
 
-    await admin.from('assessments').update({ status: 'analysing' }).eq('id', assessmentId)
+    if (!clauseId) {
+      await admin.from('assessments').update({ status: 'analysing' }).eq('id', assessmentId)
+    }
 
     // AS9100 encompasses both 'as9100'-specific clauses and the 'iso9001' base
     const standards = assessment.standards as string[]
     const clauseStandards = [...new Set(standards.flatMap(s => s === 'as9100' ? ['as9100', 'iso9001'] : [s]))]
 
-    const { data: clauses } = await admin
+    let query = admin
       .from('iso_clauses')
       .select('id, standard, title, shall_text, evidence_types')
       .in('standard', clauseStandards)
+
+    if (clauseId) query = query.eq('id', clauseId)
+
+    const { data: clauses } = await query
 
     if (!clauses || clauses.length === 0) {
       return NextResponse.json(
@@ -97,7 +103,9 @@ export async function POST(request: Request) {
       )
     }
 
-    await admin.from('assessments').update({ status: 'complete' }).eq('id', assessmentId)
+    if (!clauseId) {
+      await admin.from('assessments').update({ status: 'complete' }).eq('id', assessmentId)
+    }
 
     return NextResponse.json({ success: true, assessed: clauses.length })
 

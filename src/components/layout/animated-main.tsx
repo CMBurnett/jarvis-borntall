@@ -6,8 +6,8 @@ import { useRef, useState, useEffect } from "react";
 import { getNavOrder, getIntermediateOrders, getNavEntryByOrder } from "@/lib/nav-config";
 
 // ─── Timing constants ─────────────────────────────────────
-const EXIT_DURATION   = 0.28; // seconds
-const ENTER_DURATION  = 0.38;
+const EXIT_DURATION   = 0.2; // seconds
+const ENTER_DURATION  = 0.28;
 const INT_PER_VIEW    = 0.22; // seconds per intermediate ghost
 
 const EASE_OUT = [0.25, 0.46, 0.45, 0.94] as [number, number, number, number];
@@ -16,7 +16,7 @@ const EASE_IN  = [0.55, 0.055, 0.675, 0.19] as [number, number, number, number];
 // ─── Page variants (direction-aware + enter delay) ────────
 const pageVariants = {
   enter: ({ dir, delay }: { dir: 1 | -1; delay: number }) => ({
-    y: dir > 0 ? "52%" : "-52%",
+    y: dir > 0 ? 14 : -14,
     opacity: 0,
     transition: { delay, duration: ENTER_DURATION, ease: EASE_OUT },
   }),
@@ -26,7 +26,7 @@ const pageVariants = {
     transition: { delay, duration: ENTER_DURATION, ease: EASE_OUT },
   }),
   exit: ({ dir }: { dir: 1 | -1; delay: number }) => ({
-    y: dir > 0 ? "-28%" : "28%",
+    y: dir > 0 ? -8 : 8,
     opacity: 0,
     transition: { duration: EXIT_DURATION, ease: EASE_IN },
   }),
@@ -166,7 +166,7 @@ export function AnimatedMain({ children }: { children: React.ReactNode }) {
 
       {/* Animated page content */}
       <div className="relative h-full overflow-hidden">
-        <AnimatePresence mode="wait" initial={false}>
+        <AnimatePresence mode="sync" initial={false}>
           <motion.div
             key={pathname}
             custom={custom}
