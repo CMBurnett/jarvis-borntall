@@ -139,7 +139,6 @@ export function HomeContent({ name }: { name: string }) {
                 className="h-8 w-auto"
                 priority
               />
-              <span className="text-muted-foreground/50 text-2xl font-light">+</span>
               <Image
                 src={jarvisLogo}
                 alt="Jarvis logo"
