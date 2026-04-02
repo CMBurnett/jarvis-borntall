@@ -1,3 +1,6 @@
 [submodule "agents/iso-ready"]
 	path = agents/iso-ready
 	url = https://github.com/CMBurnett/iso-ready.git
+[submodule "agents/order-processing"]
+	path = agents/order-processing
+	url = https://github.com/CMBurnett/order-processing.git

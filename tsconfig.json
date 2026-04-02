@@ -20,7 +20,8 @@
     ],
     "paths": {
       "@/*": ["./src/*"],
-      "@iso-ready/*": ["./agents/iso-ready/*"]
+      "@iso-ready/*": ["./agents/iso-ready/*"],
+      "@order-processing/*": ["./agents/order-processing/*"]
     }
   },
   "include": [
@@ -31,5 +32,5 @@
     ".next/dev/types/**/*.ts",
     "**/*.mts"
   ],
-  "exclude": ["node_modules", "agents/iso-ready", "ref"]
+  "exclude": ["node_modules", "agents/iso-ready", "agents/order-processing", "ref"]
 }

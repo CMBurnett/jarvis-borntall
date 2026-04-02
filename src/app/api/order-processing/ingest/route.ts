@@ -1,0 +1,161 @@
+/**
+ * POST /api/order-processing/ingest
+ *
+ * Triggers the full ingestion pipeline:
+ * 1. Fetch UNSEEN emails via IMAP
+ * 2. OCR any PDF/image attachments
+ * 3. Pull Sage customer context from the Python sidecar
+ * 4. Extract fields via Ollama LLM
+ * 5. Run SKU matching against pgvector catalog
+ * 6. Write op_orders + op_line_items to Supabase
+ *
+ * Called by the UI's "Manual ingest" button or a scheduled job.
+ * Can also accept a raw email body in the request for manual testing.
+ */
+import { NextRequest, NextResponse } from 'next/server'
+import { createClient } from '@/lib/supabase/server'
+import { createClient as createAdminClient } from '@supabase/supabase-js'
+import { fetchUnseenEmails } from '@order-processing/lib/ingestion/imap'
+import { parseEmail, combineEmailContent } from '@order-processing/lib/ingestion/parser'
+import { extractTextFromAttachment } from '@order-processing/lib/ingestion/ocr'
+import { extractOrderFields } from '@order-processing/lib/extraction/extractor'
+import { rollUpConfidence } from '@order-processing/lib/extraction/confidence'
+import { getSageCustomerContext } from '@order-processing/lib/matching/sage-context'
+import { matchSku } from '@order-processing/lib/matching/sku-matcher'
+
+export async function POST(req: NextRequest) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const admin = createAdminClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+
+  // Get org_id for the current user
+  const { data: profile } = await admin
+    .from('profiles')
+    .select('org_id')
+    .eq('id', user.id)
+    .single()
+
+  const org_id = profile?.org_id
+  if (!org_id) return NextResponse.json({ error: 'No org_id for user' }, { status: 400 })
+
+  // Accept either a raw email body from the request or poll IMAP
+  const body = await req.json().catch(() => null)
+  const rawEmails: { uid: string; raw: Buffer }[] = []
+
+  if (body?.raw_email) {
+    rawEmails.push({ uid: 'manual', raw: Buffer.from(body.raw_email as string) })
+  } else {
+    const fetched = await fetchUnseenEmails()
+    rawEmails.push(...fetched)
+  }
+
+  const results: { order_id: string; status: string }[] = []
+
+  for (const { uid, raw } of rawEmails) {
+    try {
+      const email = await parseEmail(raw)
+
+      // OCR all attachments
+      const attachmentTexts = await Promise.all(
+        email.attachments.map((att) =>
+          extractTextFromAttachment(att.content, att.content_type)
+        )
+      )
+
+      const emailContent = combineEmailContent(email, attachmentTexts)
+
+      // Create order row (pending_extraction)
+      const { data: orderRow } = await admin
+        .from('op_orders')
+        .insert({
+          org_id,
+          status: 'pending_extraction',
+          source: 'email',
+          raw_email: emailContent,
+          received_at: email.date,
+        })
+        .select('id')
+        .single()
+
+      if (!orderRow) continue
+      const orderId = orderRow.id
+
+      await admin.from('op_audit_log').insert({
+        order_id: orderId,
+        actor: 'system',
+        action: 'ingested',
+        payload: { uid, from: email.from, subject: email.subject },
+      })
+
+      // LLM extraction (with customer context if available)
+      // First pass: extract customer name to look up Sage history
+      const prelimResult = await extractOrderFields(emailContent, null)
+      const customerName = prelimResult.customer_name.value
+      const sageContext = customerName ? await getSageCustomerContext(customerName) : null
+
+      // Second pass: extraction with full customer context
+      const extraction = customerName && sageContext
+        ? await extractOrderFields(emailContent, sageContext)
+        : prelimResult
+
+      const overallConfidence = rollUpConfidence(extraction)
+
+      await admin.from('op_orders').update({
+        status: 'pending_review',
+        customer_name: extraction.customer_name.value,
+        po_number: extraction.po_number.value,
+        delivery_date: extraction.requested_delivery_date.value,
+        shipping_address: extraction.shipping_address.value,
+        special_instructions: extraction.special_instructions.value,
+        extraction_confidence: overallConfidence,
+        sage_customer_no: sageContext?.customer_no ?? null,
+        updated_at: new Date().toISOString(),
+      }).eq('id', orderId)
+
+      await admin.from('op_audit_log').insert({
+        order_id: orderId,
+        actor: 'system',
+        action: 'extraction_complete',
+        payload: { confidence: overallConfidence, fields_extracted: Object.keys(extraction).length },
+      })
+
+      // SKU matching for each line item
+      for (let i = 0; i < extraction.line_items.length; i++) {
+        const li = extraction.line_items[i]
+        const matchText = [li.description, li.sku_guess].filter(Boolean).join(' ')
+        const match = await matchSku(matchText)
+
+        await admin.from('op_line_items').insert({
+          order_id: orderId,
+          raw_text: li.raw_text,
+          quantity: li.quantity.value,
+          unit: li.unit.value,
+          description: li.description,
+          confidence: li.quantity.confidence === 'LOW' || li.unit.confidence === 'LOW' ? 'LOW' : 'MEDIUM',
+          sku_matched: match.auto_sku,
+          sku_candidates: match.candidates,
+          sku_match_status: match.match_status,
+          sort_order: i,
+        })
+      }
+
+      await admin.from('op_audit_log').insert({
+        order_id: orderId,
+        actor: 'system',
+        action: 'sku_matched',
+        payload: { line_items: extraction.line_items.length },
+      })
+
+      results.push({ order_id: orderId, status: 'pending_review' })
+    } catch (err) {
+      results.push({ order_id: uid, status: `error: ${String(err)}` })
+    }
+  }
+
+  return NextResponse.json({ processed: results.length, results })
+}
