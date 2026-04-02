@@ -1,12 +1,12 @@
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { getLLMProvider } from '@iso-ready/lib/providers/llm/index'
-import { getEmbeddingProvider } from '@iso-ready/lib/providers/embeddings/index'
+import { getLLMProvider } from '@/lib/providers/llm'
+import { getEmbeddingProvider } from '@/lib/providers/embeddings'
 import { NextResponse } from 'next/server'
 
 export async function POST(request: Request) {
   try {
-    const { assessmentId } = await request.json()
+    const { assessmentId, clauseId } = await request.json()
     if (!assessmentId) return NextResponse.json({ error: 'Missing assessmentId' }, { status: 400 })
 
     const supabase = await createClient()
@@ -25,16 +25,22 @@ export async function POST(request: Request) {
 
     if (!assessment) return NextResponse.json({ error: 'Assessment not found' }, { status: 404 })
 
-    await admin.from('assessments').update({ status: 'analysing' }).eq('id', assessmentId)
+    if (!clauseId) {
+      await admin.from('assessments').update({ status: 'analysing' }).eq('id', assessmentId)
+    }
 
     // AS9100 encompasses both 'as9100'-specific clauses and the 'iso9001' base
     const standards = assessment.standards as string[]
     const clauseStandards = [...new Set(standards.flatMap(s => s === 'as9100' ? ['as9100', 'iso9001'] : [s]))]
 
-    const { data: clauses } = await admin
+    let query = admin
       .from('iso_clauses')
       .select('id, standard, title, shall_text, evidence_types')
       .in('standard', clauseStandards)
+
+    if (clauseId) query = query.eq('id', clauseId)
+
+    const { data: clauses } = await query
 
     if (!clauses || clauses.length === 0) {
       return NextResponse.json(
@@ -43,13 +49,11 @@ export async function POST(request: Request) {
       )
     }
 
-    // Embed all clause queries in batches
-    const EMBED_BATCH = 50
+    // Embed all clause queries (using search_query prefix for nomic)
     const clauseEmbeddings: number[][] = []
-    for (let i = 0; i < clauses.length; i += EMBED_BATCH) {
-      const batch = clauses.slice(i, i + EMBED_BATCH)
-      const embs = await embedder.embed(batch.map(c => `${c.title}: ${c.shall_text}`))
-      clauseEmbeddings.push(...embs)
+    for (const clause of clauses) {
+      const emb = await embedder.embedQuery(`${clause.title}: ${clause.shall_text}`)
+      clauseEmbeddings.push(emb)
     }
 
     // Assess each clause
@@ -85,7 +89,7 @@ export async function POST(request: Request) {
           assessment_id: assessmentId,
           org_id: assessment.org_id,
           clause_id: clause.id,
-          provider: 'anthropic',
+          provider: 'ollama',
           status: result.status,
           evidence_summary: result.evidence_summary,
           gap_description: result.gap_description,
@@ -99,7 +103,9 @@ export async function POST(request: Request) {
       )
     }
 
-    await admin.from('assessments').update({ status: 'complete' }).eq('id', assessmentId)
+    if (!clauseId) {
+      await admin.from('assessments').update({ status: 'complete' }).eq('id', assessmentId)
+    }
 
     return NextResponse.json({ success: true, assessed: clauses.length })
 

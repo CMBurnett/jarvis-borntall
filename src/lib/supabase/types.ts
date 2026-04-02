@@ -324,6 +324,14 @@ export type Database = {
         };
         Returns: { id: string; content: string; similarity: number }[];
       };
+      match_chunks_bge: {
+        Args: {
+          query_embedding: string;
+          assessment_id: string;
+          match_count?: number;
+        };
+        Returns: { id: string; content: string; similarity: number }[];
+      };
     };
     Enums: {
       [_ in never]: never;

@@ -74,9 +74,9 @@ const APPS = [
 
 function getGreeting() {
   const hour = new Date().getHours();
-  if (hour < 12) return "Good morning";
-  if (hour < 17) return "Good afternoon";
-  return "Good evening";
+  if (hour < 12) return "Good Morning";
+  if (hour < 17) return "Good Afternoon";
+  return "Good Evening";
 }
 
 function formatDate(date: Date) {
@@ -125,7 +125,7 @@ export function HomeContent({ name }: { name: string }) {
             {mounted ? dateStr : "\u00A0"}
           </p>
           <h1 className="text-2xl font-semibold text-foreground mt-0.5">
-            {mounted ? `${greeting}, ${name}` : "\u00A0"}
+            {mounted ? `${greeting}, Gary` : "\u00A0"}
           </h1>
         </div>
         <div className="flex items-center">
