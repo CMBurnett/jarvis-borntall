@@ -4,3 +4,6 @@
 [submodule "agents/order-processing"]
 	path = agents/order-processing
 	url = https://github.com/CMBurnett/order-processing.git
+[submodule "agents/reporting"]
+	path = agents/reporting
+	url = https://github.com/CMBurnett/reporting.git

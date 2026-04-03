@@ -8,6 +8,7 @@ import {
   ClipboardList,
   ArrowUpRight,
   Rocket,
+  BarChart3,
 } from "lucide-react";
 
 const APPS = [
@@ -37,6 +38,15 @@ const APPS = [
     gradient: "from-teal-500 to-cyan-500",
     status: "active" as const,
     stats: "Sage 100 · Email",
+  },
+  {
+    id: "reporting",
+    name: "Reporting",
+    description: "Custom financial dashboards from Sage 100 data. Run preset reports or describe one in plain English and let AI build it.",
+    Icon: BarChart3,
+    gradient: "from-emerald-500 to-teal-500",
+    status: "active" as const,
+    stats: "AR · AP · Revenue · Backlog",
   },
   {
     id: "shipping",
