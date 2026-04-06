@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { isMockMode, runPreset } from '@/lib/reporting/mock-adapter'
 
 const SIDECAR = process.env.REPORTING_SIDECAR_URL ?? 'http://localhost:8002'
 
@@ -12,6 +13,16 @@ export async function GET(
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { slug } = await params
+
+  if (isMockMode()) {
+    try {
+      const searchParams = Object.fromEntries(req.nextUrl.searchParams.entries())
+      return NextResponse.json(runPreset(slug, searchParams))
+    } catch (err) {
+      return NextResponse.json({ error: String(err) }, { status: 400 })
+    }
+  }
+
   const search = req.nextUrl.searchParams.toString()
   const url = `${SIDECAR}/reporting/presets/${slug}${search ? `?${search}` : ''}`
 
@@ -21,8 +32,7 @@ export async function GET(
       const detail = await res.text()
       return NextResponse.json({ error: detail }, { status: res.status })
     }
-    const data = await res.json()
-    return NextResponse.json(data)
+    return NextResponse.json(await res.json())
   } catch (err) {
     return NextResponse.json({ error: String(err) }, { status: 500 })
   }

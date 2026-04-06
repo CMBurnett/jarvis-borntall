@@ -1,6 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import Image from "next/image";
+import { useTheme } from "next-themes";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,6 +16,12 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { resolvedTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
+  const pelsealLogo = resolvedTheme === "dark" ? "/pelseal-home-white.svg" : "/pelseal-home-color.svg";
+  const jarvisLogo  = resolvedTheme === "dark" ? "/jarvis-white.svg"       : "/jarvis-black.svg";
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -44,12 +52,14 @@ export default function LoginPage() {
         style={{ background: "radial-gradient(ellipse at 50% 0%, var(--brand-glow) 0%, transparent 70%)" }}
       />
       <div className="relative w-full max-w-sm">
-        {/* Logo */}
-        <div className="flex flex-col items-center mb-8 gap-3">
-          <div className="h-10 w-10 rounded-xl bg-brand-gradient flex items-center justify-center">
-            <span className="text-primary-foreground font-semibold text-lg">J</span>
-          </div>
-          <h1 className="text-xl font-semibold tracking-tight text-foreground">Jarvis</h1>
+        {/* Logos */}
+        <div className="flex flex-col items-center mb-8 gap-4">
+          {mounted && (
+            <>
+              <Image src={pelsealLogo} alt="Pelseal" width={160} height={44} className="h-11 w-auto" priority />
+              <Image src={jarvisLogo}  alt="Jarvis"  width={80}  height={24} className="h-5 w-auto opacity-40" priority />
+            </>
+          )}
         </div>
 
         {/* Card */}

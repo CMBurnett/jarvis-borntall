@@ -24,8 +24,9 @@ import { NAV_ENTRIES, getNavOrder } from "@/lib/nav-config";
 import type { NavEntry } from "@/lib/nav-config";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 
-// Primary nav: Home, Chat, BI Dashboard, Apps
-const primaryNav = NAV_ENTRIES.filter((e) => e.order <= 4);
+// Primary nav: Home + apps
+const homeNav = NAV_ENTRIES.filter((e) => e.order === 1);
+const appsNav = NAV_ENTRIES.filter((e) => e.order >= 2 && e.order <= 4);
 // Bottom nav: Settings
 const bottomNav = NAV_ENTRIES.filter((e) => e.order >= 5);
 
@@ -92,7 +93,11 @@ export function NavSidebar({
 
       {/* Primary nav */}
       <nav className="flex flex-1 flex-col items-center gap-1.5 px-3 py-2">
-        {primaryNav.map((entry) => (
+        {homeNav.map((entry) => (
+          <NavItem key={entry.href} entry={entry} active={isActive(entry)} />
+        ))}
+        <NavDivider />
+        {appsNav.map((entry) => (
           <NavItem key={entry.href} entry={entry} active={isActive(entry)} />
         ))}
       </nav>

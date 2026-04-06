@@ -16,6 +16,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createClient as createAdminClient } from '@supabase/supabase-js'
 import { fetchUnseenEmails } from '@order-processing/lib/ingestion/imap'
+import { fetchMailpitEmails } from '@order-processing/lib/ingestion/mailpit'
 import { parseEmail, combineEmailContent } from '@order-processing/lib/ingestion/parser'
 import { extractTextFromAttachment } from '@order-processing/lib/ingestion/ocr'
 import { extractOrderFields } from '@order-processing/lib/extraction/extractor'
@@ -49,8 +50,11 @@ export async function POST(req: NextRequest) {
 
   if (body?.raw_email) {
     rawEmails.push({ uid: 'manual', raw: Buffer.from(body.raw_email as string) })
-  } else {
+  } else if (process.env.IMAP_HOST) {
     const fetched = await fetchUnseenEmails()
+    rawEmails.push(...fetched)
+  } else {
+    const fetched = await fetchMailpitEmails()
     rawEmails.push(...fetched)
   }
 

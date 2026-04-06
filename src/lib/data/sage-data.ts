@@ -141,10 +141,18 @@ export interface ApInvoiceHeaderRow {
   TransactionStatus: string
 }
 
+export interface ImItemSalesHistoryRow {
+  ItemCode: string
+  ItemCodeDesc: string
+  Year: number
+  QtyShipped: number
+}
+
 // ─── Raw table exports ────────────────────────────────────────────────────────
 
 export const arCustomers = rawData.AR_Customer as ArCustomerRow[]
 export const imItemMaster = rawData.IM_ItemMaster as ImItemMasterRow[]
+export const imItemSalesHistory = (rawData as unknown as { IM_ItemSalesHistory: ImItemSalesHistoryRow[] }).IM_ItemSalesHistory
 export const soSalesOrderHeaders = rawData.SO_SalesOrderHeader as SoSalesOrderHeaderRow[]
 export const soSalesOrderDetails = rawData.SO_SalesOrderDetail as SoSalesOrderDetailRow[]
 export const arInvoiceHeaders = rawData.AR_InvoiceHeader as ArInvoiceHeaderRow[]
@@ -357,6 +365,43 @@ export function queryApAging(asOfDate: string) {
       }
     })
     .sort((a, b) => a.VendorName.localeCompare(b.VendorName) || a.DueDate.localeCompare(b.DueDate))
+}
+
+/** Item unit sales history, pivoted by calendar year. Mirrors the Sage 100 Item Unit Sales History Report.
+ *  startYear / endYear are 4-digit year strings (e.g. "2013", "2016").
+ *  Returns one row per item with Qty_YYYY columns + TotalQty, sorted by TotalQty desc.
+ */
+export function queryItemUnitSalesHistory(startYear: string, endYear: string) {
+  const start = parseInt(startYear, 10)
+  const end   = parseInt(endYear,   10)
+
+  const items: Record<string, { ItemCode: string; ItemCodeDesc: string; years: Record<number, number> }> = {}
+
+  for (const row of imItemSalesHistory) {
+    if (row.Year < start || row.Year > end) continue
+    if (!items[row.ItemCode]) {
+      items[row.ItemCode] = { ItemCode: row.ItemCode, ItemCodeDesc: row.ItemCodeDesc, years: {} }
+    }
+    items[row.ItemCode].years[row.Year] = (items[row.ItemCode].years[row.Year] ?? 0) + row.QtyShipped
+  }
+
+  const yearRange: number[] = []
+  for (let y = start; y <= end; y++) yearRange.push(y)
+
+  return Object.values(items)
+    .map((item) => {
+      const out: Record<string, string | number> = { ItemCode: item.ItemCode, ItemCodeDesc: item.ItemCodeDesc }
+      let total = 0
+      for (const y of yearRange) {
+        const qty = item.years[y] ?? 0
+        out[`Qty_${y}`] = qty
+        total += qty
+      }
+      out.TotalQty = total
+      return out
+    })
+    .filter((r) => (r.TotalQty as number) > 0)
+    .sort((a, b) => (b.TotalQty as number) - (a.TotalQty as number))
 }
 
 /** Open sales order value by customer (open/backordered orders on or before asOfDate). */
