@@ -204,6 +204,8 @@ export async function POST(req: NextRequest) {
           sku_matched: match.auto_sku,
           sku_candidates: match.candidates,
           sku_match_status: match.match_status,
+          unit_price: li.unit_price,
+          line_total: li.line_total,
           sort_order: i,
         })
       }

@@ -196,7 +196,7 @@ export function HomeContent({
     router.push(`/apps/reporting?prompt=${encodeURIComponent(reportPrompt.trim())}`);
   }
 
-  return (
+return (
     <div className="flex flex-col gap-5 max-w-6xl mx-auto">
       {/* Header */}
       <div className="flex items-end justify-between pt-1">
@@ -270,15 +270,16 @@ export function HomeContent({
                 {orderSummary.recentOrders.map((order) => (
                   <Link
                     key={order.id}
-                    href={`/apps/order-processing`}
-                    className="flex items-center gap-3 px-2 py-1.5 rounded-lg hover:bg-muted/50 transition-colors group"
+                    href={`/apps/order-processing/orders/${order.id}`}
+                    className="flex items-center gap-3 px-2 py-1.5 rounded-lg hover:bg-muted/50 transition-colors"
                   >
                     <div className="flex-1 min-w-0">
                       <p className="text-xs font-medium text-foreground truncate">
                         {order.customer_name ?? "Unknown customer"}
+                        {order.po_number ? ` - PO ${order.po_number}` : ""}
                       </p>
                       <p className="text-[11px] text-muted-foreground">
-                        {order.po_number ? `PO ${order.po_number}` : "No PO"} · {timeAgo(order.received_at)}
+                        {timeAgo(order.received_at)}
                       </p>
                     </div>
                     <OrderStatusBadge status={order.status} />

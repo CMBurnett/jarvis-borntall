@@ -43,3 +43,33 @@ export async function GET(
   }
   return NextResponse.json(result)
 }
+
+export async function DELETE(
+  _req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params
+  const supabase = await createClient()
+
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const admin = createAdminClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+
+  // Delete stored attachments from Storage first
+  const { data: order } = await admin.from('op_orders').select('attachments, org_id').eq('id', id).single()
+  if (order) {
+    const paths = ((order as unknown as { attachments: Array<{ path: string }> }).attachments ?? []).map((a) => a.path)
+    if (paths.length > 0) {
+      await admin.storage.from('op-attachments').remove(paths)
+    }
+  }
+
+  const { error } = await admin.from('op_orders').delete().eq('id', id)
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  return NextResponse.json({ ok: true })
+}
