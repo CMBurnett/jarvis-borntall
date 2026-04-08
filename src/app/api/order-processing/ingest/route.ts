@@ -44,23 +44,46 @@ export async function POST(req: NextRequest) {
   const org_id = profile?.org_id
   if (!org_id) return NextResponse.json({ error: 'No org_id for user' }, { status: 400 })
 
-  // Accept either a raw email body from the request or poll IMAP
-  const body = await req.json().catch(() => null)
-  const rawEmails: { uid: string; raw: Buffer }[] = []
+  const contentType = req.headers.get('content-type') ?? ''
+  const rawEmails: { uid: string; raw: Buffer; isManual?: boolean }[] = []
 
-  if (body?.raw_email) {
-    rawEmails.push({ uid: 'manual', raw: Buffer.from(body.raw_email as string) })
-  } else if (process.env.IMAP_HOST) {
-    const fetched = await fetchUnseenEmails()
-    rawEmails.push(...fetched)
+  if (contentType.includes('multipart/form-data')) {
+    // Manual upload: email text + optional file attachments (PDFs, images, .eml, .txt)
+    const formData = await req.formData()
+    const rawEmailText = (formData.get('raw_email') as string | null)?.trim() ?? ''
+    const files = formData.getAll('files') as File[]
+
+    const parts: string[] = []
+    if (rawEmailText) parts.push(rawEmailText)
+
+    for (const file of files) {
+      const buffer = Buffer.from(await file.arrayBuffer())
+      const text = await extractTextFromAttachment(buffer, file.type || 'application/octet-stream')
+      if (text?.trim()) {
+        parts.push(`=== ATTACHMENT: ${file.name} ===\n${text.trim()}`)
+      }
+    }
+
+    if (parts.length > 0) {
+      rawEmails.push({ uid: 'manual', raw: Buffer.from(parts.join('\n\n')), isManual: true })
+    }
   } else {
-    const fetched = await fetchMailpitEmails()
-    rawEmails.push(...fetched)
+    // JSON body or empty → poll IMAP / Mailpit
+    const body = await req.json().catch(() => null)
+    if (body?.raw_email) {
+      rawEmails.push({ uid: 'manual', raw: Buffer.from(body.raw_email as string), isManual: true })
+    } else if (process.env.IMAP_HOST) {
+      const fetched = await fetchUnseenEmails()
+      rawEmails.push(...fetched)
+    } else {
+      const fetched = await fetchMailpitEmails()
+      rawEmails.push(...fetched)
+    }
   }
 
   const results: { order_id: string; status: string }[] = []
 
-  for (const { uid, raw } of rawEmails) {
+  for (const { uid, raw, isManual } of rawEmails) {
     try {
       const email = await parseEmail(raw)
 
@@ -79,7 +102,7 @@ export async function POST(req: NextRequest) {
         .insert({
           org_id,
           status: 'pending_extraction',
-          source: 'email',
+          source: isManual ? 'manual' : 'email',
           raw_email: emailContent,
           received_at: email.date,
         })
