@@ -45,7 +45,9 @@ export async function POST(req: NextRequest) {
   if (!org_id) return NextResponse.json({ error: 'No org_id for user' }, { status: 400 })
 
   const contentType = req.headers.get('content-type') ?? ''
-  const rawEmails: { uid: string; raw: Buffer; isManual?: boolean }[] = []
+
+  type AttachmentFile = { name: string; buffer: Buffer; contentType: string }
+  const rawEmails: { uid: string; raw: Buffer; isManual?: boolean; attachmentFiles?: AttachmentFile[] }[] = []
 
   if (contentType.includes('multipart/form-data')) {
     // Manual upload: email text + optional file attachments (PDFs, images, .eml, .txt)
@@ -54,10 +56,12 @@ export async function POST(req: NextRequest) {
     const files = formData.getAll('files') as File[]
 
     const parts: string[] = []
+    const attachmentFiles: AttachmentFile[] = []
     if (rawEmailText) parts.push(rawEmailText)
 
     for (const file of files) {
       const buffer = Buffer.from(await file.arrayBuffer())
+      attachmentFiles.push({ name: file.name, buffer, contentType: file.type || 'application/octet-stream' })
       const text = await extractTextFromAttachment(buffer, file.type || 'application/octet-stream')
       if (text?.trim()) {
         parts.push(`=== ATTACHMENT: ${file.name} ===\n${text.trim()}`)
@@ -65,7 +69,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (parts.length > 0) {
-      rawEmails.push({ uid: 'manual', raw: Buffer.from(parts.join('\n\n')), isManual: true })
+      rawEmails.push({ uid: 'manual', raw: Buffer.from(parts.join('\n\n')), isManual: true, attachmentFiles })
     }
   } else {
     // JSON body or empty → poll IMAP / Mailpit
@@ -83,7 +87,8 @@ export async function POST(req: NextRequest) {
 
   const results: { order_id: string; status: string }[] = []
 
-  for (const { uid, raw, isManual } of rawEmails) {
+  for (const { uid, raw, isManual, attachmentFiles } of rawEmails) {
+    let orderId: string | undefined
     try {
       const email = await parseEmail(raw)
 
@@ -110,7 +115,29 @@ export async function POST(req: NextRequest) {
         .single()
 
       if (!orderRow) continue
-      const orderId = orderRow.id
+      orderId = orderRow.id
+
+      // Upload attachment files to Supabase Storage
+      const filesToStore: Array<{ name: string; buffer: Buffer; contentType: string }> = isManual
+        ? (attachmentFiles ?? [])
+        : email.attachments.map((a) => ({ name: a.filename, buffer: a.content, contentType: a.content_type }))
+
+      if (filesToStore.length > 0) {
+        await admin.storage.createBucket('op-attachments', { public: false }).catch(() => {})
+        const attachmentMeta: Array<{ filename: string; path: string; content_type: string }> = []
+        for (const file of filesToStore) {
+          const storagePath = `${orderId}/${file.name}`
+          const { error: uploadErr } = await admin.storage
+            .from('op-attachments')
+            .upload(storagePath, file.buffer, { contentType: file.contentType, upsert: true })
+          if (!uploadErr) {
+            attachmentMeta.push({ filename: file.name, path: storagePath, content_type: file.contentType })
+          }
+        }
+        if (attachmentMeta.length > 0) {
+          await admin.from('op_orders').update({ attachments: attachmentMeta }).eq('id', orderId)
+        }
+      }
 
       await admin.from('op_audit_log').insert({
         order_id: orderId,
@@ -140,6 +167,13 @@ export async function POST(req: NextRequest) {
         shipping_address: extraction.shipping_address.value,
         special_instructions: extraction.special_instructions.value,
         extraction_confidence: overallConfidence,
+        field_confidence: {
+          customer_name: extraction.customer_name.confidence,
+          po_number: extraction.po_number.confidence,
+          requested_delivery_date: extraction.requested_delivery_date.confidence,
+          shipping_address: extraction.shipping_address.confidence,
+          special_instructions: extraction.special_instructions.confidence,
+        },
         sage_customer_no: sageContext?.customer_no ?? null,
         updated_at: new Date().toISOString(),
       }).eq('id', orderId)
@@ -151,11 +185,14 @@ export async function POST(req: NextRequest) {
         payload: { confidence: overallConfidence, fields_extracted: Object.keys(extraction).length },
       })
 
-      // SKU matching for each line item
+      // SKU matching — non-fatal, falls back to 'unmatched' if embeddings unavailable
       for (let i = 0; i < extraction.line_items.length; i++) {
         const li = extraction.line_items[i]
-        const matchText = [li.description, li.sku_guess].filter(Boolean).join(' ')
-        const match = await matchSku(matchText)
+        let match = { auto_sku: null, candidates: [], match_status: 'unmatched' as const }
+        try {
+          const matchText = [li.description, li.sku_guess].filter(Boolean).join(' ')
+          match = await matchSku(matchText)
+        } catch { /* embeddings unavailable — reviewer will assign SKU manually */ }
 
         await admin.from('op_line_items').insert({
           order_id: orderId,
@@ -180,7 +217,7 @@ export async function POST(req: NextRequest) {
 
       results.push({ order_id: orderId, status: 'pending_review' })
     } catch (err) {
-      results.push({ order_id: uid, status: `error: ${String(err)}` })
+      results.push({ order_id: orderId ?? uid, status: `error: ${String(err)}` })
     }
   }
 

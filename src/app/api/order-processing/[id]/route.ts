@@ -28,7 +28,18 @@ export async function GET(
     return NextResponse.json({ error: 'Not found' }, { status: 404 })
   }
 
+  // Generate public URLs for stored attachments (permanent — bucket must be public)
+  const storedAttachments = ((order as unknown as { attachments: Array<{ filename: string; path: string; content_type: string }> }).attachments ?? [])
+  const attachments = storedAttachments.map((a) => {
+    const { data } = admin.storage.from('op-attachments').getPublicUrl(a.path)
+    return { filename: a.filename, content_type: a.content_type, url: data.publicUrl }
+  })
+
   // Reshape line_items from join alias
-  const result = { ...order, line_items: (order as unknown as { op_line_items: unknown[] }).op_line_items ?? [] }
+  const result = {
+    ...order,
+    line_items: (order as unknown as { op_line_items: unknown[] }).op_line_items ?? [],
+    attachments,
+  }
   return NextResponse.json(result)
 }
