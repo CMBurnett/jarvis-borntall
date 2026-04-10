@@ -15,7 +15,6 @@ import {
   queryGrossProfitByCustomer,
   queryApAging,
   querySalesOrderBacklog,
-  queryItemUnitSalesHistory,
 } from '@/lib/data/sage-data'
 import type { ReportSpec } from '@reporting/lib/types'
 
@@ -80,15 +79,6 @@ export const PRESET_DEFINITIONS = [
       as_of_date: { type: 'date', label: 'As of Date', required: true },
     },
   },
-  {
-    slug: 'item-unit-sales-history',
-    title: 'Item Unit Sales History',
-    description: 'Units sold per item by calendar year — mirrors the Sage 100 Item Unit Sales History Report.',
-    param_schema: {
-      start_year: { type: 'string', label: 'Start Year (e.g. 2013)', required: true },
-      end_year:   { type: 'string', label: 'End Year (e.g. 2016)',   required: true },
-    },
-  },
 ]
 
 // ── Preset runner ─────────────────────────────────────────────────────────────
@@ -109,8 +99,6 @@ export function runPreset(slug: string, params: Record<string, string>) {
       return queryApAging(params.as_of_date ?? today)
     case 'sales-order-backlog':
       return querySalesOrderBacklog(params.as_of_date ?? today)
-    case 'item-unit-sales-history':
-      return queryItemUnitSalesHistory(params.start_year ?? '2013', params.end_year ?? '2016')
     default:
       throw new Error(`Unknown preset slug: '${slug}'`)
   }
@@ -140,6 +128,16 @@ const TABLE_MAP: Record<string, DataRow[]> = {
   AP_VendorMaster:     apVendorMasters     as unknown as DataRow[],
   AP_InvoiceHeader:    apInvoiceHeaders    as unknown as DataRow[],
   IM_ItemMaster:       imItemMaster        as unknown as DataRow[],
+}
+
+export function getAllowedFields(): Record<string, string[]> {
+  const result: Record<string, string[]> = {}
+  for (const [table, rows] of Object.entries(TABLE_MAP)) {
+    if (rows.length > 0) {
+      result[table] = Object.keys(rows[0])
+    }
+  }
+  return result
 }
 
 export function runCustom(spec: ReportSpec): DataRow[] {

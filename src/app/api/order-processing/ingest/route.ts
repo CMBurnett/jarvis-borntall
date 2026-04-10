@@ -77,8 +77,12 @@ export async function POST(req: NextRequest) {
     if (body?.raw_email) {
       rawEmails.push({ uid: 'manual', raw: Buffer.from(body.raw_email as string), isManual: true })
     } else if (process.env.IMAP_HOST) {
-      const fetched = await fetchUnseenEmails()
-      rawEmails.push(...fetched)
+      try {
+        const fetched = await fetchUnseenEmails()
+        rawEmails.push(...fetched)
+      } catch (e: unknown) {
+        console.error('[ingest] IMAP fetch failed:', e)
+      }
     } else {
       const fetched = await fetchMailpitEmails()
       rawEmails.push(...fetched)
@@ -91,6 +95,10 @@ export async function POST(req: NextRequest) {
     let orderId: string | undefined
     try {
       const email = await parseEmail(raw)
+      console.log(`[ingest] Email "${email.subject}" — ${email.attachments.length} attachment(s)`)
+      for (const att of email.attachments) {
+        console.log(`[ingest]   ${att.filename} (${att.content_type}, ${att.content.length} bytes)`)
+      }
 
       // OCR all attachments
       const attachmentTexts = await Promise.all(
@@ -98,8 +106,12 @@ export async function POST(req: NextRequest) {
           extractTextFromAttachment(att.content, att.content_type)
         )
       )
+      for (let i = 0; i < attachmentTexts.length; i++) {
+        console.log(`[ingest]   OCR result for ${email.attachments[i].filename}: ${attachmentTexts[i].length} chars`)
+      }
 
       const emailContent = combineEmailContent(email, attachmentTexts)
+      console.log(`[ingest] Combined content: ${emailContent.length} chars`)
 
       // Create order row (pending_extraction)
       const { data: orderRow } = await admin

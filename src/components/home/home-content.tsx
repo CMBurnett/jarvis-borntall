@@ -347,11 +347,11 @@ return (
                 </div>
               </div>
 
-              {/* Custom */}
+              {/* Custom reports */}
               {reportingSummary.savedDashboards.length > 0 && (
                 <div>
                   <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider mb-2">
-                    Custom
+                    Custom Reports
                   </p>
                   <div className="space-y-1">
                     {reportingSummary.savedDashboards.map((d) => (

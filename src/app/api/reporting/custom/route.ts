@@ -13,6 +13,8 @@ export async function POST(req: NextRequest) {
   const body = await req.json()
   const parsed = ReportSpecSchema.safeParse(body)
   if (!parsed.success) {
+    console.error('[reporting/custom] Validation failed:', JSON.stringify(parsed.error.flatten(), null, 2))
+    console.error('[reporting/custom] Body was:', JSON.stringify(body, null, 2))
     return NextResponse.json(
       { error: 'Invalid ReportSpec', details: parsed.error.flatten() },
       { status: 422 }

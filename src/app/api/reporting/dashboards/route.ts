@@ -2,14 +2,33 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createClient as createAdminClient } from '@supabase/supabase-js'
 
+function getAdmin() {
+  return createAdminClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+}
+
 export async function GET() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { data, error } = await supabase
+  const admin = getAdmin()
+  const { data: profile } = await admin
+    .from('profiles')
+    .select('org_id')
+    .eq('id', user.id)
+    .single()
+
+  if (!profile?.org_id) {
+    return NextResponse.json({ error: 'No org found' }, { status: 400 })
+  }
+
+  const { data, error } = await admin
     .from('rp_dashboards')
     .select('*')
+    .eq('org_id', profile.org_id)
     .order('created_at', { ascending: false })
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
@@ -21,10 +40,7 @@ export async function POST(req: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const admin = createAdminClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-  )
+  const admin = getAdmin()
   const { data: profile } = await admin
     .from('profiles')
     .select('org_id')
@@ -42,7 +58,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'name, source, connector, spec are required' }, { status: 400 })
   }
 
-  const { data, error } = await supabase
+  const { data, error } = await admin
     .from('rp_dashboards')
     .insert({
       org_id: profile.org_id,

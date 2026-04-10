@@ -38,7 +38,7 @@ export async function POST(
     })
     .eq('id', id)
 
-  // Update line items with reviewer SKU selections
+  // Update line items with reviewer edits (SKU, pricing, quantities)
   for (const item of order.line_items ?? []) {
     await admin
       .from('op_line_items')
@@ -46,6 +46,10 @@ export async function POST(
         sku_matched: item.sku_matched,
         sku_match_status: item.sku_match_status,
         override_note: item.override_note,
+        quantity: item.quantity,
+        unit: item.unit,
+        unit_price: item.unit_price,
+        line_total: item.line_total,
       })
       .eq('id', item.id)
   }
