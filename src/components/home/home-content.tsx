@@ -3,14 +3,12 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
 import {
   ShieldCheck,
   BarChart3,
   FileCheck2,
   ArrowUpRight,
-  Send,
 } from "lucide-react";
 import { PRESET_DEFINITIONS } from "@reporting/lib/presets";
 
@@ -170,11 +168,9 @@ export function HomeContent({
   reportingSummary: ReportingSummary;
 }>) {
   const { resolvedTheme } = useTheme();
-  const router = useRouter();
   const [mounted, setMounted] = useState(false);
   const [greeting, setGreeting] = useState("");
   const [dateStr, setDateStr] = useState("");
-  const [reportPrompt, setReportPrompt] = useState("");
 
   useEffect(() => {
     setMounted(true);
@@ -190,11 +186,6 @@ export function HomeContent({
   const pelsealLogo = resolvedTheme === "dark" ? "/pelseal-home-white.svg" : "/pelseal-home-color.svg";
   const jarvisLogo  = resolvedTheme === "dark" ? "/jarvis-white.svg"       : "/jarvis-black.svg";
 
-  function handleBuildReport(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    if (!reportPrompt.trim()) return;
-    router.push(`/apps/reporting?prompt=${encodeURIComponent(reportPrompt.trim())}`);
-  }
 
 return (
     <div className="flex flex-col gap-5 max-w-6xl mx-auto">
@@ -302,32 +293,10 @@ return (
               href="/apps/reporting"
             />
 
-            {/* NL prompt */}
-            <form onSubmit={handleBuildReport} className="mb-5">
-              <textarea
-                value={reportPrompt}
-                onChange={(e) => setReportPrompt(e.target.value)}
-                placeholder={'Describe the report you want — e.g. "Show me which customers had declining revenue last quarter"'}
-                rows={3}
-                className="w-full text-sm rounded-lg border border-border bg-muted/40 px-3 py-2 resize-none placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-ring transition-colors"
-              />
-              <button
-                type="submit"
-                disabled={!reportPrompt.trim()}
-                className="mt-2 flex items-center gap-2 px-4 py-1.5 rounded-lg bg-emerald-600 text-white text-xs font-medium hover:bg-emerald-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-              >
-                <Send className="h-3 w-3" />
-                Build Report
-              </button>
-            </form>
-
             {/* Dashboards list — presets first, then custom */}
             <div className="border-t border-border pt-4 space-y-4">
               {/* Presets — 2-col grid */}
               <div>
-                <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider mb-2">
-                  Presets
-                </p>
                 <div className="grid grid-cols-2 gap-1.5">
                   {PRESET_DEFINITIONS.map((p) => (
                     <Link
