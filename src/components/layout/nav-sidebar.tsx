@@ -26,9 +26,9 @@ import type { User as SupabaseUser } from "@supabase/supabase-js";
 
 // Primary nav: Home + apps
 const homeNav = NAV_ENTRIES.filter((e) => e.order === 1);
-const appsNav = NAV_ENTRIES.filter((e) => e.order >= 2 && e.order <= 4);
+const appsNav = NAV_ENTRIES.filter((e) => e.order >= 2 && e.order <= 5);
 // Bottom nav: Settings
-const bottomNav = NAV_ENTRIES.filter((e) => e.order >= 5);
+const bottomNav = NAV_ENTRIES.filter((e) => e.order >= 6);
 
 function NavItem({
   entry,

@@ -22,7 +22,8 @@
       "@/*": ["./src/*"],
       "@iso-ready/*": ["./agents/iso-ready/*"],
       "@order-processing/*": ["./agents/order-processing/*"],
-      "@reporting/*": ["./agents/reporting/*"]
+      "@reporting/*": ["./agents/reporting/*"],
+      "@crm/*": ["./agents/crm/*"]
     }
   },
   "include": [

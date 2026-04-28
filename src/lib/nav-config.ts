@@ -4,6 +4,7 @@ import {
   FileCheck2,
   BarChart3,
   Settings,
+  Users,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -21,7 +22,8 @@ export const NAV_ENTRIES: NavEntry[] = [
   { order: 2, href: "/apps/iso-ready",        label: "ISO Ready",        icon: ShieldCheck },
   { order: 3, href: "/apps/order-processing", label: "Order Processing", icon: FileCheck2 },
   { order: 4, href: "/apps/reporting",        label: "Reporting",        icon: BarChart3 },
-  { order: 5, href: "/settings",             label: "Settings",          icon: Settings },
+  { order: 5, href: "/apps/crm",             label: "CRM",              icon: Users },
+  { order: 6, href: "/settings",             label: "Settings",          icon: Settings },
 ];
 
 export function getNavOrder(pathname: string): number {
