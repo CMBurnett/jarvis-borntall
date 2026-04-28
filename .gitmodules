@@ -7,3 +7,6 @@
 [submodule "agents/reporting"]
 	path = agents/reporting
 	url = https://github.com/CMBurnett/reporting.git
+[submodule "agents/crm"]
+	path = agents/crm
+	url = https://github.com/CMBurnett/crm.git
