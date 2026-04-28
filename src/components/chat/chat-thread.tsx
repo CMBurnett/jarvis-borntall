@@ -5,6 +5,7 @@ import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
 import { Sparkles, ArrowUp, User } from "lucide-react";
 import ReactMarkdown from "react-markdown";
+import { siteConfig } from "@/lib/site";
 
 export function ChatThread({
   chatId,
@@ -125,7 +126,7 @@ export function ChatThread({
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Ask Jarvis anything…"
+                placeholder={`Ask ${siteConfig.appName} anything…`}
                 rows={1}
                 className="w-full resize-none bg-transparent text-sm outline-none placeholder:text-muted-foreground leading-relaxed"
               />
@@ -166,7 +167,7 @@ export function ChatThread({
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Ask Jarvis anything…"
+                placeholder={`Ask ${siteConfig.appName} anything…`}
                 rows={1}
                 className="w-full resize-none bg-transparent text-sm outline-none placeholder:text-muted-foreground leading-relaxed"
               />

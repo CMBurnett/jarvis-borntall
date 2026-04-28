@@ -1,6 +1,11 @@
 
 
 
+-- Move vector to public schema if it was installed in extensions (remote bootstrap)
+DO $$ BEGIN
+  ALTER EXTENSION vector SET SCHEMA public;
+EXCEPTION WHEN others THEN NULL; END $$;
+
 SET statement_timeout = 0;
 SET lock_timeout = 0;
 SET idle_in_transaction_session_timeout = 0;

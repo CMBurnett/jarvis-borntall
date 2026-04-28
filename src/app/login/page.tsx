@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Image from "next/image";
 import { useTheme } from "next-themes";
 import { createClient } from "@/lib/supabase/client";
+import { siteConfig } from "@/lib/site";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -20,8 +21,12 @@ export default function LoginPage() {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
-  const pelsealLogo = resolvedTheme === "dark" ? "/pelseal-home-white.svg" : "/pelseal-home-color.svg";
-  const jarvisLogo  = resolvedTheme === "dark" ? "/jarvis-white.svg"       : "/jarvis-black.svg";
+  const isDark = resolvedTheme === "dark";
+  const appLogo = isDark ? siteConfig.appLogo.dark : siteConfig.appLogo.light;
+  let companyLogoSrc: string | null = null;
+  if (siteConfig.companyLogo) {
+    companyLogoSrc = isDark ? siteConfig.companyLogo.dark : siteConfig.companyLogo.light;
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -56,8 +61,10 @@ export default function LoginPage() {
         <div className="flex flex-col items-center mb-8 gap-4">
           {mounted && (
             <>
-              <Image src={pelsealLogo} alt="Pelseal" width={160} height={44} className="h-11 w-auto" priority />
-              <Image src={jarvisLogo}  alt="Jarvis"  width={80}  height={24} className="h-5 w-auto opacity-40" priority />
+              {companyLogoSrc && (
+                <Image src={companyLogoSrc} alt={siteConfig.companyName} width={160} height={44} className="h-11 w-auto" priority />
+              )}
+              <Image src={appLogo} alt={siteConfig.appName} width={80} height={24} className="h-5 w-auto opacity-40" priority />
             </>
           )}
         </div>

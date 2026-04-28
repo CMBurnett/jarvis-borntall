@@ -1,6 +1,7 @@
 import { createOpenAI } from "@ai-sdk/openai";
 import { streamText, type UIMessage } from "ai";
 import { buildDemoContext } from "@/lib/data/demo-context";
+import { siteConfig } from "@/lib/site";
 
 const demoContext = buildDemoContext(["all"]);
 
@@ -24,7 +25,7 @@ export async function POST(req: Request) {
 
   const result = streamText({
     model: ollama(process.env.OLLAMA_MODEL ?? "qwen3.5:9b"),
-    system: `You are Jarvis, an AI assistant for business operations at a mid-size industrial manufacturing and distribution company.
+    system: `You are ${siteConfig.appName}, an AI assistant for business operations at a mid-size industrial manufacturing and distribution company.
 
 INSTRUCTIONS:
 - Answer questions using ONLY the business data provided below. The data is complete and authoritative — do not say data is missing if it exists in the context.

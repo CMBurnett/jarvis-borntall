@@ -1,4 +1,5 @@
 import { ShieldAlert, Users, Blocks, Paintbrush, Activity } from "lucide-react";
+import { siteConfig } from "@/lib/site";
 
 const PANELS = [
   {
@@ -45,7 +46,7 @@ export default function AdminPage() {
       <div className="rounded-xl border border-amber-200 bg-amber-50 dark:border-amber-900 dark:bg-amber-950/20 px-4 py-3 flex items-start gap-2.5">
         <ShieldAlert className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
         <p className="text-xs text-amber-700 dark:text-amber-400">
-          Changes here affect all users on this Jarvis instance. Proceed carefully.
+          Changes here affect all users on this {siteConfig.appName} instance. Proceed carefully.
         </p>
       </div>
 

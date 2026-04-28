@@ -2,6 +2,8 @@
 -- All tables prefixed op_ to avoid collisions with other agents in the shared Supabase project.
 -- Requires: pgvector extension (enabled by iso-ready migration or manually)
 
+set search_path to public, extensions;
+
 -- ── Orders ────────────────────────────────────────────────────────────────────
 
 create type op_order_status as enum (

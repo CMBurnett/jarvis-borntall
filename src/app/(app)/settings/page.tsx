@@ -9,12 +9,13 @@ import {
   Paintbrush,
   Activity,
 } from "lucide-react";
+import { siteConfig } from "@/lib/site";
 
 const SETTINGS_SECTIONS = [
   {
     icon: Cpu,
     label: "AI Model",
-    description: "Select the LLM provider and model used by Jarvis.",
+    description: `Select the LLM provider and model used by ${siteConfig.appName}.`,
     preview: "Ollama · Qwen3.5 · local",
   },
   {

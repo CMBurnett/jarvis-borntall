@@ -18,6 +18,7 @@ import {
   MessageSquare,
   Sparkles,
 } from "lucide-react";
+import { siteConfig } from "@/lib/site";
 
 const EXAMPLE_CHATS = [
   {
@@ -130,8 +131,8 @@ function ChatPageInner() {
             <Sparkles className="h-4 w-4 text-white" strokeWidth={1.75} />
           </div>
           <div>
-            <h1 className="text-xl font-semibold text-foreground leading-tight">Jarvis Chat</h1>
-            <p className="text-xs text-muted-foreground">Ask Jarvis about operations, compliance, orders, and more</p>
+            <h1 className="text-xl font-semibold text-foreground leading-tight">{siteConfig.appName} Chat</h1>
+            <p className="text-xs text-muted-foreground">Ask {siteConfig.appName} about operations, compliance, orders, and more</p>
           </div>
         </div>
       </div>

@@ -10,6 +10,7 @@ import {
   FileCheck2,
   ArrowUpRight,
 } from "lucide-react";
+import { siteConfig } from "@/lib/site";
 import { PRESET_DEFINITIONS } from "@reporting/lib/presets";
 
 // ── Types (exported so page.tsx can import them) ──────────────────────────────
@@ -183,8 +184,12 @@ export function HomeContent({
     return () => clearInterval(interval);
   }, []);
 
-  const pelsealLogo = resolvedTheme === "dark" ? "/pelseal-home-white.svg" : "/pelseal-home-color.svg";
-  const jarvisLogo  = resolvedTheme === "dark" ? "/jarvis-white.svg"       : "/jarvis-black.svg";
+  const isDark = resolvedTheme === "dark";
+  const appLogo = isDark ? siteConfig.appLogo.dark : siteConfig.appLogo.light;
+  let companyLogoSrc: string | null = null;
+  if (siteConfig.companyLogo) {
+    companyLogoSrc = isDark ? siteConfig.companyLogo.dark : siteConfig.companyLogo.light;
+  }
 
 
 return (
@@ -199,8 +204,10 @@ return (
         </div>
         {mounted && (
           <div className="flex items-center gap-3">
-            <Image src={pelsealLogo} alt="Pelseal" width={120} height={32} className="h-8 w-auto" priority />
-            <Image src={jarvisLogo}  alt="Jarvis"  width={80}  height={24} className="h-5 w-auto opacity-50" priority />
+            {companyLogoSrc && (
+              <Image src={companyLogoSrc} alt={siteConfig.companyName} width={120} height={32} className="h-8 w-auto" priority />
+            )}
+            <Image src={appLogo} alt={siteConfig.appName} width={80} height={24} className="h-5 w-auto opacity-50" priority />
           </div>
         )}
       </div>
