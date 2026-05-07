@@ -521,6 +521,215 @@ export type Database = {
         };
         Relationships: [];
       };
+      // Jarvis OS tables
+      contexts: {
+        Row: {
+          id: string;
+          user_id: string;
+          name: string;
+          description: string;
+          lifecycle_stage: "active_dev" | "stabilization" | "maintenance" | "paused";
+          security_tier: 1 | 2 | 3;
+          stack_summary: string;
+          repo_url: string | null;
+          deploy_url: string | null;
+          sprint_focus: string;
+          claude_md_content: string;
+          models: Json;
+          tools: Json;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          user_id: string;
+          name: string;
+          description?: string;
+          lifecycle_stage?: "active_dev" | "stabilization" | "maintenance" | "paused";
+          security_tier?: 1 | 2 | 3;
+          stack_summary?: string;
+          repo_url?: string | null;
+          deploy_url?: string | null;
+          sprint_focus?: string;
+          claude_md_content?: string;
+          models?: Json;
+          tools?: Json;
+        };
+        Update: {
+          name?: string;
+          description?: string;
+          lifecycle_stage?: "active_dev" | "stabilization" | "maintenance" | "paused";
+          security_tier?: 1 | 2 | 3;
+          stack_summary?: string;
+          repo_url?: string | null;
+          deploy_url?: string | null;
+          sprint_focus?: string;
+          claude_md_content?: string;
+          models?: Json;
+          tools?: Json;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      security_checks: {
+        Row: {
+          id: string;
+          context_id: string;
+          user_id: string;
+          category: string;
+          check_key: string;
+          label: string;
+          status: "pass" | "warn" | "fail" | "pending" | "na";
+          last_checked_at: string | null;
+          notes: string | null;
+          auto_checkable: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          context_id: string;
+          user_id: string;
+          category: string;
+          check_key: string;
+          label: string;
+          status?: "pass" | "warn" | "fail" | "pending" | "na";
+          last_checked_at?: string | null;
+          notes?: string | null;
+          auto_checkable?: boolean;
+        };
+        Update: {
+          status?: "pass" | "warn" | "fail" | "pending" | "na";
+          last_checked_at?: string | null;
+          notes?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      inbox_items: {
+        Row: {
+          id: string;
+          context_id: string;
+          user_id: string;
+          source: "sentry" | "vercel" | "supabase" | "github" | "uptime" | "anthropic" | "security_check" | "manual";
+          category: "error" | "deploy" | "security" | "performance" | "ai_alert" | "business_event" | "pr" | "info";
+          priority: "urgent" | "high" | "normal" | "low";
+          title: string;
+          preview: string;
+          raw_payload: Json;
+          agent_summary: string | null;
+          agent_suggested_actions: Json | null;
+          is_read: boolean;
+          is_archived: boolean;
+          needs_action: boolean;
+          created_at: string;
+        };
+        Insert: {
+          context_id: string;
+          user_id: string;
+          source: "sentry" | "vercel" | "supabase" | "github" | "uptime" | "anthropic" | "security_check" | "manual";
+          category: "error" | "deploy" | "security" | "performance" | "ai_alert" | "business_event" | "pr" | "info";
+          priority?: "urgent" | "high" | "normal" | "low";
+          title: string;
+          preview?: string;
+          raw_payload?: Json;
+          agent_summary?: string | null;
+          agent_suggested_actions?: Json | null;
+          is_read?: boolean;
+          is_archived?: boolean;
+          needs_action?: boolean;
+        };
+        Update: {
+          priority?: "urgent" | "high" | "normal" | "low";
+          agent_summary?: string | null;
+          agent_suggested_actions?: Json | null;
+          is_read?: boolean;
+          is_archived?: boolean;
+          needs_action?: boolean;
+        };
+        Relationships: [];
+      };
+      webhook_logs: {
+        Row: {
+          id: string;
+          context_id: string | null;
+          user_id: string | null;
+          source: string;
+          received_at: string;
+          processed_at: string | null;
+          status: "pending" | "processed" | "failed" | "invalid_sig";
+          error_message: string | null;
+          raw_payload: Json;
+        };
+        Insert: {
+          context_id?: string | null;
+          user_id?: string | null;
+          source: string;
+          status?: "pending" | "processed" | "failed" | "invalid_sig";
+          error_message?: string | null;
+          raw_payload?: Json;
+        };
+        Update: {
+          processed_at?: string | null;
+          status?: "pending" | "processed" | "failed" | "invalid_sig";
+          error_message?: string | null;
+        };
+        Relationships: [];
+      };
+      agent_runs: {
+        Row: {
+          id: string;
+          inbox_item_id: string | null;
+          user_id: string | null;
+          model_used: string;
+          tokens_in: number | null;
+          tokens_out: number | null;
+          latency_ms: number | null;
+          result: Json | null;
+          created_at: string;
+        };
+        Insert: {
+          inbox_item_id?: string | null;
+          user_id?: string | null;
+          model_used: string;
+          tokens_in?: number | null;
+          tokens_out?: number | null;
+          latency_ms?: number | null;
+          result?: Json | null;
+        };
+        Update: never;
+        Relationships: [];
+      };
+      user_preferences: {
+        Row: {
+          user_id: string;
+          notification_prefs: Json;
+          updated_at: string;
+        };
+        Insert: {
+          user_id: string;
+          notification_prefs?: Json;
+        };
+        Update: {
+          notification_prefs?: Json;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      push_subscriptions: {
+        Row: {
+          id: string;
+          user_id: string;
+          endpoint: string;
+          keys: Json;
+          created_at: string;
+        };
+        Insert: {
+          user_id: string;
+          endpoint: string;
+          keys: Json;
+        };
+        Update: never;
+        Relationships: [];
+      };
       crm_email_sync_log: {
         Row: {
           id: string;

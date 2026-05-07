@@ -1,10 +1,12 @@
 import {
-  Home,
+  Inbox,
+  LayoutGrid,
   ShieldCheck,
   FileCheck2,
   BarChart3,
   Settings,
   Users,
+  Bot,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -18,12 +20,18 @@ export type NavEntry = {
 };
 
 export const NAV_ENTRIES: NavEntry[] = [
-  { order: 1, href: "/",                      label: "Home",             icon: Home },
-  { order: 2, href: "/apps/iso-ready",        label: "ISO Ready",        icon: ShieldCheck },
-  { order: 3, href: "/apps/order-processing", label: "Order Processing", icon: FileCheck2 },
-  { order: 4, href: "/apps/reporting",        label: "Reporting",        icon: BarChart3 },
-  { order: 5, href: "/apps/crm",             label: "CRM",              icon: Users },
-  { order: 6, href: "/settings",             label: "Settings",          icon: Settings },
+  // Jarvis OS global nav (orders 1–3)
+  { order: 1, href: "/inbox",     label: "Inbox",     icon: Inbox },
+  { order: 2, href: "/portfolio", label: "Portfolio", icon: LayoutGrid },
+  { order: 3, href: "/security",  label: "Security",  icon: ShieldCheck },
+  { order: 4, href: "/agents",    label: "Agents",    icon: Bot },
+  // Existing apps (orders 10–13 — gap is safe, AnimatedMain no-ops undefined entries)
+  { order: 10, href: "/apps/iso-ready",        label: "ISO Ready",        icon: ShieldCheck },
+  { order: 11, href: "/apps/order-processing", label: "Order Processing", icon: FileCheck2 },
+  { order: 12, href: "/apps/reporting",        label: "Reporting",        icon: BarChart3 },
+  { order: 13, href: "/apps/crm",             label: "CRM",              icon: Users },
+  // Settings
+  { order: 20, href: "/settings", label: "Settings", icon: Settings },
 ];
 
 export function getNavOrder(pathname: string): number {
