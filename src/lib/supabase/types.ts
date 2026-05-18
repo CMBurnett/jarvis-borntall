@@ -338,6 +338,12 @@ export type Database = {
           est_sales_cycle: string | null;
           population: string | null;
           municipality_type: string | null;
+          enrichment_status: string | null;
+          enriched_at: string | null;
+          enrichment_error: string | null;
+          linkedin_url: string | null;
+          tech_stack: string[] | null;
+          apollo_org_id: string | null;
         };
         Insert: {
           name: string;
@@ -369,6 +375,12 @@ export type Database = {
           est_sales_cycle?: string | null;
           population?: string | null;
           municipality_type?: string | null;
+          enrichment_status?: string | null;
+          enriched_at?: string | null;
+          enrichment_error?: string | null;
+          linkedin_url?: string | null;
+          tech_stack?: string[] | null;
+          apollo_org_id?: string | null;
         };
         Update: {
           name?: string;
@@ -400,6 +412,12 @@ export type Database = {
           est_sales_cycle?: string | null;
           population?: string | null;
           municipality_type?: string | null;
+          enrichment_status?: string | null;
+          enriched_at?: string | null;
+          enrichment_error?: string | null;
+          linkedin_url?: string | null;
+          tech_stack?: string[] | null;
+          apollo_org_id?: string | null;
           updated_at?: string;
         };
         Relationships: [];
@@ -416,6 +434,11 @@ export type Database = {
           linkedin_url: string | null;
           is_primary: boolean;
           notes: string | null;
+          email_verified: boolean | null;
+          email_status: string | null;
+          email_confidence: number | null;
+          enrichment_source: string | null;
+          apollo_person_id: string | null;
         };
         Insert: {
           lead_id?: string | null;
@@ -426,6 +449,11 @@ export type Database = {
           linkedin_url?: string | null;
           is_primary?: boolean;
           notes?: string | null;
+          email_verified?: boolean | null;
+          email_status?: string | null;
+          email_confidence?: number | null;
+          enrichment_source?: string | null;
+          apollo_person_id?: string | null;
         };
         Update: {
           lead_id?: string | null;
@@ -436,6 +464,11 @@ export type Database = {
           linkedin_url?: string | null;
           is_primary?: boolean;
           notes?: string | null;
+          email_verified?: boolean | null;
+          email_status?: string | null;
+          email_confidence?: number | null;
+          enrichment_source?: string | null;
+          apollo_person_id?: string | null;
         };
         Relationships: [];
       };
